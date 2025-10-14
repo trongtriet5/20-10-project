@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Website Chúc Mừng 20/10 - Ngày Phụ Nữ Việt Nam
 
-## Getting Started
+Một website dễ thương được tạo bằng Next.js để gửi lời chúc mừng ngày 20/10 đến những người phụ nữ tuyệt vời.
 
-First, run the development server:
+## ✨ Tính năng
 
+- 🎨 Giao diện đẹp mắt với màu hồng chủ đạo
+- 💝 Nhập tên để cá nhân hóa lời chúc
+- 🌸 Hiệu ứng animation mượt mà với Framer Motion
+- 📱 Responsive design tối ưu cho mọi thiết bị
+- 🎉 Lời chúc ngẫu nhiên đa dạng
+- ⭐ Hiệu ứng sparkle và floating elements
+
+## 🚀 Cài đặt và chạy
+
+1. Cài đặt dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Chạy development server:
+```bash
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Mở trình duyệt và truy cập [http://localhost:3000](http://localhost:3000)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Công nghệ sử dụng
 
-## Learn More
+- **Next.js 15** - React framework
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+- **Framer Motion** - Animations
+- **Lucide React** - Icons
 
-To learn more about Next.js, take a look at the following resources:
+## 📱 Responsive Design
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Website được tối ưu cho:
+- 📱 Mobile (320px+)
+- 📱 Tablet (768px+)
+- 💻 Desktop (1024px+)
+- 🖥️ Large screens (1280px+)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🎨 Màu sắc chủ đạo
 
-## Deploy on Vercel
+- **Primary**: Pink (#ec4899)
+- **Secondary**: Rose (#f43f5e)
+- **Background**: Gradient từ pink-100 đến rose-100
+- **Text**: Pink-600, Pink-700
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📝 Cách sử dụng
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Nhập tên của người bạn muốn gửi lời chúc
+2. Nhấn nút "Nhận Lời Chúc"
+3. Xem lời chúc ngẫu nhiên được cá nhân hóa
+4. Có thể gửi lời chúc khác bằng cách nhấn "Gửi Lời Chúc Khác"
+
+## 🎯 Mục đích
+
+Website này được tạo để:
+- Chúc mừng ngày 20/10 - Ngày Phụ Nữ Việt Nam
+- Tạo niềm vui và hạnh phúc cho những người phụ nữ
+- Thể hiện sự quan tâm và yêu thương
+- Lan tỏa năng lượng tích cực
+
+## 📄 License
+
+MIT License - Sử dụng tự do cho mục đích cá nhân và thương mại.
+
+---
+
+💖 Chúc bạn có một ngày 20/10 thật ý nghĩa và hạnh phúc! 💖
