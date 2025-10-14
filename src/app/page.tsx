@@ -229,7 +229,7 @@ export default function Home() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Tên của cục vàng là gì dọoooo ??"
+                  placeholder="Tên của nàng là gì ... ??"
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-pink-100 focus:border-pink-300 focus:outline-none text-center text-base sm:text-lg placeholder-pink-200"
                   required
                 />
