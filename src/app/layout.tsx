@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Chúc Mừng 20/10 - Ngày Phụ Nữ Việt Nam",
-  description: "Gửi lời chúc mừng ngày 20/10 đến những người phụ nữ tuyệt vời trong cuộc đời bạn",
+  description: "Gửi lời chúc mừng ngày 20/10 đến những người phụ nữ một lời chúc thật ý nghĩa",
   keywords: "20/10, ngày phụ nữ việt nam, chúc mừng, lời chúc, phụ nữ",
   authors: [{ name: "Wish 20/10" }],
   viewport: "width=device-width, initial-scale=1",

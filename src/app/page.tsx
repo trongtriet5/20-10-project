@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry } from 'lucide-react';
+import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry, Download, Volume2, VolumeX } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import Fireworks from '@/components/Fireworks';
 
@@ -11,6 +12,77 @@ export default function Home() {
   const [showWish, setShowWish] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
   const [showLetter, setShowLetter] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showMusicPrompt, setShowMusicPrompt] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Khởi tạo nhạc nền với nhiều cách tiếp cận
+  useEffect(() => {
+    const initAudio = async () => {
+      if (audioRef.current && !isInitialized) {
+        audioRef.current.loop = true;
+        audioRef.current.volume = 0.2;
+        
+        // Thử phát nhạc ngay lập tức
+        try {
+          await audioRef.current.play();
+          console.log('Nhạc nền đã phát thành công');
+          setIsMuted(false);
+          setShowMusicPrompt(false);
+        } catch (error) {
+          console.log('Autoplay bị chặn, thử lại sau');
+          // Không set muted ngay, để thử lại
+          setShowMusicPrompt(true);
+        }
+        
+        setIsInitialized(true);
+      }
+    };
+
+    // Thử phát nhạc ngay lập tức
+    initAudio();
+  }, [isInitialized]);
+
+  // Thử phát nhạc khi có tương tác đầu tiên
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      if (audioRef.current && showMusicPrompt && !isMuted) {
+        audioRef.current.play().then(() => {
+          setShowMusicPrompt(false);
+          setIsMuted(false);
+          console.log('Nhạc nền đã được kích hoạt bởi tương tác');
+        }).catch(() => {
+          console.log('Vẫn không thể phát nhạc');
+        });
+      }
+    };
+
+    // Lắng nghe mọi tương tác của người dùng
+    document.addEventListener('click', handleUserInteraction, { once: true });
+    document.addEventListener('keydown', handleUserInteraction, { once: true });
+    document.addEventListener('touchstart', handleUserInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+      document.removeEventListener('touchstart', handleUserInteraction);
+    };
+  }, [showMusicPrompt, isMuted]);
+
+
+  // Xử lý tắt/bật nhạc
+  const toggleMusic = () => {
+    if (audioRef.current) {
+      if (isMuted) {
+        audioRef.current.play();
+        setIsMuted(false);
+      } else {
+        audioRef.current.pause();
+        setIsMuted(true);
+      }
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +99,208 @@ export default function Home() {
   const handleOpenLetter = () => {
     setShowLetter(false);
     setShowWish(true);
+  };
+
+  const handleExportLetter = async () => {
+    try {
+      // Tạo một bức thư đã mở để xuất hình ảnh (chỉ nội dung, không có button)
+      const letterElement = document.createElement('div');
+      letterElement.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        top: -9999px;
+        width: 500px;
+        height: 700px;  
+        background: linear-gradient(135deg, #fce7f3, #fdf2f8);
+        border-radius: 20px;
+        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.3);
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      `;
+      
+      // Tạo nội dung bức thư đã mở
+      const letterContent = document.createElement('div');
+      letterContent.style.cssText = `
+        width: 100%;
+        max-width: 420px;
+        background: white;
+        border-radius: 20px;
+        padding: 50px 40px;
+        box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.15);
+        position: relative;
+        text-align: center;
+      `;
+      
+      // Icon chính - sử dụng icon ngẫu nhiên như trong giao diện
+      const iconContainer = document.createElement('div');
+      iconContainer.style.cssText = `
+        margin: 0 auto 35px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      `;
+      
+      // Tạo SVG cho icon ngẫu nhiên
+      const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      iconSvg.setAttribute('width', '100');
+      iconSvg.setAttribute('height', '100');
+      iconSvg.setAttribute('viewBox', '0 0 24 24');
+      iconSvg.setAttribute('fill', 'none');
+      // Chuyển đổi màu từ Tailwind class sang hex
+      const colorMap = {
+        'text-pink-500': '#ec4899',
+        'text-pink-400': '#f472b6', 
+        'text-pink-300': '#f9a8d4',
+        'text-purple-400': '#c084fc',
+        'text-purple-500': '#a855f7',
+        'text-yellow-400': '#facc15',
+        'text-yellow-300': '#fde047',
+        'text-blue-400': '#60a5fa',
+        'text-red-400': '#f87171',
+        'text-rose-400': '#fb7185'
+      };
+      const strokeColor = colorMap[randomIcon.color as keyof typeof colorMap] || '#ec4899';
+      iconSvg.setAttribute('stroke', strokeColor);
+      iconSvg.setAttribute('stroke-width', '2');
+      iconSvg.setAttribute('stroke-linecap', 'round');
+      iconSvg.setAttribute('stroke-linejoin', 'round');
+      
+      // Tạo path cho icon dựa trên icon được chọn
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      
+      // Định nghĩa path cho từng icon
+      const iconPaths = {
+        Heart: 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z',
+        Flower: 'M12 2C8.5 2 6 4.5 6 8c0 2.5 1.5 4.5 3 6l3 3 3-3c1.5-1.5 3-3.5 3-6 0-3.5-2.5-6-6-6z',
+        Bird: 'M16 7h.01M16 3a4 4 0 0 1 4 4c0 .88-.39 1.67-1 2.22V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7.78C4.39 12.67 4 11.88 4 11a4 4 0 0 1 4-4h8z',
+        Rainbow: 'M22 12a10 10 0 0 0-20 0A10 10 0 0 0 22 12zM6 12a6 6 0 0 1 12 0M10 12a2 2 0 0 1 4 0',
+        Sun: 'M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41M12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12z',
+        Moon: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z',
+        Cherry: 'M2 17a5 5 0 0 0 10 0c0-2.76-2.5-5-5-5s-5 2.24-5 5zM7 17a2 2 0 1 1 0-4 2 2 0 0 1 0 4zM12 17a5 5 0 0 0 10 0c0-2.76-2.5-5-5-5s-5 2.24-5 5zM17 17a2 2 0 1 1 0-4 2 2 0 0 1 0 4z',
+        Star: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
+        Sparkles: 'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0L9.937 15.5zM12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12z',
+        Gift: 'M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'
+      };
+      
+      // Lấy tên icon từ randomIcon bằng cách tìm index trong mảng cuteIcons
+      const iconIndex = cuteIcons.findIndex(icon => icon.icon === randomIcon.icon);
+      const iconNames = ['Heart', 'Flower', 'Bird', 'Rainbow', 'Sun', 'Moon', 'Cherry', 'Star', 'Sparkles', 'Gift'];
+      const iconName = iconNames[iconIndex] || 'Heart';
+      const iconPath = iconPaths[iconName as keyof typeof iconPaths] || iconPaths.Heart;
+      
+      path.setAttribute('d', iconPath);
+      iconSvg.appendChild(path);
+      iconContainer.appendChild(iconSvg);
+      
+      // Tiêu đề
+      const title = document.createElement('h2');
+      title.textContent = `Chào ${name}! 💕`;
+      title.style.cssText = `
+        font-size: 36px;
+        font-weight: bold;
+        color: #be185d;
+        margin: 0 0 40px 0;
+        text-align: center;
+        font-family: 'Arial', sans-serif;
+        line-height: 1.2;
+      `;
+      
+      // Nội dung lời chúc
+      const wishContent = document.createElement('div');
+      wishContent.style.cssText = `
+        background: linear-gradient(135deg, #fdf2f8, #fce7f3);
+        border-radius: 20px;
+        padding: 35px;
+        margin: 30px 0;
+        border-left: 6px solid #ec4899;
+        box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.1);
+      `;
+      
+      const wishText = document.createElement('p');
+      wishText.textContent = randomWish;
+      wishText.style.cssText = `
+        font-size: 20px;
+        color: #be185d;
+        line-height: 1.8;
+        margin: 0;
+        text-align: left;
+        font-family: 'Arial', sans-serif;
+      `;
+      
+      // Chữ ký
+      const signature = document.createElement('div');
+      signature.style.cssText = `
+        text-align: right;
+        margin-top: 50px;
+        margin-bottom: 20px;
+        font-style: italic;
+        color: #ec4899;
+        font-size: 18px;
+        font-family: 'Arial', sans-serif;
+      `;
+      signature.textContent = 'Với tất cả tình yêu thương ❤️';
+      
+      
+      // Thêm một số trang trí nhỏ
+      const decorations = document.createElement('div');
+      decorations.style.cssText = `
+        position: absolute;
+        bottom: 35px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 12px;
+      `;
+      
+      for (let i = 0; i < 10; i++) {
+        const star = document.createElement('div');
+        star.innerHTML = '✦';
+        star.style.cssText = `
+          color: #f472b6;
+          font-size: 20px;
+          opacity: 0.8;
+        `;
+        decorations.appendChild(star);
+      }
+      
+      // Lắp ráp các phần tử
+      wishContent.appendChild(wishText);
+      letterContent.appendChild(iconContainer);
+      letterContent.appendChild(title);
+      letterContent.appendChild(wishContent);
+      letterContent.appendChild(signature);
+      letterContent.appendChild(decorations);
+      letterElement.appendChild(letterContent);
+      
+      document.body.appendChild(letterElement);
+
+      const canvas = await html2canvas(letterElement, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: 500,
+        height: 700,
+      });
+
+      // Tạo link download
+      const link = document.createElement('a');
+      link.download = `thu-chuc-mung-20-10-${name || 'ban'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      document.body.removeChild(letterElement);
+    } catch (error) {
+      console.error('Lỗi khi xuất hình ảnh:', error);
+      alert('Có lỗi xảy ra khi xuất hình ảnh. Vui lòng thử lại!');
+    }
   };
 
   const wishes = [
@@ -83,6 +357,43 @@ export default function Home() {
         backgroundAttachment: 'fixed'
       }}
     >
+      {/* Audio element cho nhạc nền */}
+      <audio ref={audioRef} src="/cute songs.mp3" preload="auto" />
+      
+      {/* Nút điều khiển nhạc */}
+      <motion.button
+        onClick={toggleMusic}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        className="fixed top-4 right-4 z-50 bg-white/80 backdrop-blur-sm rounded-full p-3 shadow-lg hover:bg-white/90 transition-all duration-300"
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 1 }}
+      >
+        {(isMuted || showMusicPrompt) ? (
+          <VolumeX className="w-6 h-6 text-pink-500" />
+        ) : (
+          <Volume2 className="w-6 h-6 text-pink-500" />
+        )}
+      </motion.button>
+
+      {/* Thông báo khi autoplay bị chặn */}
+      {showMusicPrompt && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-20 right-4 z-50 bg-pink-500 text-white px-4 py-3 rounded-lg shadow-lg max-w-xs"
+        >
+          <div className="flex items-center gap-2">
+            <VolumeX className="w-5 h-5" />
+            <div>
+              <p className="font-medium text-sm">Nhạc nền chưa bật</p>
+              <p className="text-xs opacity-90">Tương tác bất kỳ để bật nhạc</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+      
       {/* Overlay để làm mờ background và tăng độ tương phản */}
       <div className="absolute inset-0 bg-gradient-to-br from-pink-50/60 via-pink-25/50 to-rose-50/60 backdrop-blur-sm"></div>
       
@@ -324,7 +635,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
-              className="flex justify-center space-x-4"
+              className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4"
             >
               <motion.button
                 onClick={() => {
@@ -336,6 +647,16 @@ export default function Home() {
                 className="bg-pink-400 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium hover:bg-pink-500 transition-colors text-sm sm:text-base"
               >
                 Xác nhận lời chúc
+              </motion.button>
+              
+              <motion.button
+                onClick={handleExportLetter}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium hover:from-pink-600 hover:to-rose-600 transition-all duration-300 flex items-center gap-2 text-sm sm:text-base"
+              >
+                <Download className="w-4 h-4" />
+                Lưu thư dưới dạng hình ảnh
               </motion.button>
             </motion.div>
 
