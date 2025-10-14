@@ -10,6 +10,7 @@ export default function Home() {
   const [name, setName] = useState('');
   const [showWish, setShowWish] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
+  const [showLetter, setShowLetter] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,9 +19,14 @@ export default function Home() {
       setShowFireworks(true);
       setTimeout(() => {
         setShowFireworks(false);
-        setShowWish(true);
+        setShowLetter(true); // Hiển thị bức thư thay vì lời chúc
       }, 2000); // Hiệu ứng kéo dài 2 giây
     }
+  };
+
+  const handleOpenLetter = () => {
+    setShowLetter(false);
+    setShowWish(true);
   };
 
   const wishes = [
@@ -83,8 +89,110 @@ export default function Home() {
       {/* Hiệu ứng pháo hoa */}
       {showFireworks && <Fireworks />}
       
+      {/* Bức thư */}
+      {showLetter && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, type: "spring" }}
+          className="fixed inset-0 flex items-center justify-center z-50"
+        >
+          <motion.div
+            className="relative cursor-pointer"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleOpenLetter}
+          >
+            {/* Bức thư */}
+            <motion.div
+              className="relative w-72 h-80 bg-gradient-to-br from-pink-100 to-rose-100 rounded-xl shadow-2xl"
+              animate={{
+                y: [-8, 8, -8],
+                rotate: [-1, 1, -1]
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              {/* Phong bì thư */}
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-rose-200 rounded-xl shadow-lg">
+                {/* Nắp phong bì */}
+                <div className="absolute top-0 left-0 right-0 h-36 bg-gradient-to-br from-pink-300 to-rose-300 rounded-t-xl transform origin-top transition-transform duration-500 hover:rotate-x-180">
+                  <div className="absolute top-4 left-4 right-4 h-28 bg-gradient-to-br from-pink-400 to-rose-400 rounded-t-xl"></div>
+                </div>
+                
+                {/* Nội dung bức thư */}
+                <div className="absolute top-36 left-4 right-4 bottom-4 bg-white rounded-b-xl p-6">
+                  <div className="text-center">
+                    <Heart className="w-10 h-10 text-pink-500 mx-auto mb-3" />
+                    <h3 className="text-xl font-bold text-pink-600 mb-3">
+                      Thư gửi {name}
+                    </h3>
+                    <p className="text-base text-pink-500 mb-4">
+                      Nhấn để mở thư
+                    </p>
+                    <div className="flex justify-center space-x-3">
+                      {[...Array(5)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          animate={{ 
+                            scale: [0.8, 1.3, 0.8],
+                            opacity: [0.3, 1, 0.3],
+                            rotate: [0, 180, 360]
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            delay: i * 0.3,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          <Sparkles className="w-5 h-5 text-pink-400" />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Tem thư */}
+                <div className="absolute top-3 right-3 w-14 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg border-2 border-pink-600">
+                  <div className="text-center text-white text-sm font-bold leading-10">20/10</div>
+                </div>
+              </div>
+            </motion.div>
+            
+            {/* Hiệu ứng lấp lánh xung quanh */}
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute"
+                style={{
+                  left: `${15 + (i * 6)}%`,
+                  top: `${20 + (i % 3) * 25}%`
+                }}
+                animate={{
+                  scale: [0, 1.2, 0],
+                  opacity: [0, 1, 0],
+                  rotate: [0, 360, 720]
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: i * 0.4,
+                  ease: "easeInOut"
+                }}
+              >
+                <Sparkles className="w-4 h-4 text-pink-300" />
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
+      )}
+      
       <ResponsiveContainer>
-        {!showWish ? (
+        {!showWish && !showLetter && !showFireworks ? (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -175,7 +283,7 @@ export default function Home() {
               ))}
             </motion.div>
           </motion.div>
-        ) : (
+        ) : showWish ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -255,7 +363,7 @@ export default function Home() {
               ))}
             </motion.div>
           </motion.div>
-        )}
+        ) : null}
       </ResponsiveContainer>
     </div>
   );
