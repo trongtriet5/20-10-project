@@ -3,11 +3,13 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry, Download, Volume2, VolumeX, Link as LinkIcon, Check, Zap, PartyPopper, Candy, IceCream, Camera, Music, Palette, Feather, Leaf, Cloud, Coffee, Wine, Trophy, Medal, Rocket, Crown, Smile } from 'lucide-react';
+import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry, Download, Volume2, VolumeX, Link as LinkIcon, Check, Zap, PartyPopper, Candy, IceCream, Camera, Music, Palette, Feather, Leaf, Cloud, Coffee, Wine, Trophy, Medal, Rocket, Crown, Smile, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import Fireworks from '@/components/Fireworks';
 import RichTextEditor from '@/components/RichTextEditor';
+import QRCodeGenerator from '@/components/QRCodeGenerator';
+import { createShortUrl } from '@/utils/compression';
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -25,6 +27,8 @@ function HomeContent() {
   const [mode, setMode] = useState<'self' | 'send'>('self');
   const [selectedFont, setSelectedFont] = useState<string>("Inter, Arial, sans-serif");
   const [isLoadingSharedData, setIsLoadingSharedData] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Load shared data if URL contains it
@@ -390,11 +394,15 @@ function HomeContent() {
         iconIndex: iconIndex >= 0 ? iconIndex : 0,
         font: selectedFont,
       };
-      const json = JSON.stringify(payload);
-      const base64 = btoa(unescape(encodeURIComponent(json)));
-      const url = `${window.location.origin}/read?d=${encodeURIComponent(base64)}`;
+      
+      // Tạo link nén làm link rút gọn chính
+      const baseUrl = `${window.location.origin}/read`;
+      const compressedUrl = createShortUrl(baseUrl, payload);
+      
+      setShareUrl(compressedUrl);
+      setShowQRCode(true);
 
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(compressedUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
@@ -402,6 +410,18 @@ function HomeContent() {
       alert('Không thể copy link. Bạn hãy thử lại nhé!');
     }
   };
+
+  // Get the data payload for compression
+  const getShareData = () => {
+    const iconIndex = (selectedIconIndex ?? 0);
+    return {
+      name,
+      message: (selectedWish || ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish))),
+      iconIndex: iconIndex >= 0 ? iconIndex : 0,
+      font: selectedFont,
+    };
+  };
+
 
 
   const wishes = [
@@ -722,7 +742,7 @@ function HomeContent() {
               {mode === 'send' && (
               <div>
                 <label className="block text-pink-500 font-medium mb-2">
-                  Nội dung lời chúc (có thể định dạng và chèn emoji)
+                  Nội dung lời chúc
                 </label>
                 <div className="mb-2">
                     <label className="text-pink-500 text-sm mr-2">Font:</label>
@@ -751,7 +771,6 @@ function HomeContent() {
                   className="relative"
                 />
                 
-                <p className="text-xs text-pink-400 mt-2">Rich text editor với hỗ trợ định dạng văn bản và emoji.</p>
               </div>
               )}
 
@@ -882,6 +901,31 @@ function HomeContent() {
               </motion.button>
               )}
             </motion.div>
+
+            {/* QR Code Generator */}
+            {showQRCode && shareUrl && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mt-6"
+              >
+                <div className="relative">
+                  <motion.button
+                    onClick={() => setShowQRCode(false)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="absolute -top-2 -right-2 z-10 bg-pink-500 text-white rounded-full p-2 shadow-lg hover:bg-pink-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </motion.button>
+                  <QRCodeGenerator 
+                    url={shareUrl}
+                    data={getShareData()}
+                  />
+                </div>
+              </motion.div>
+            )}
 
             <motion.div
               initial={{ opacity: 0 }}

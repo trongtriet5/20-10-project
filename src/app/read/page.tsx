@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry } from 'lucide-react';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
+import { parseShortUrl } from '@/utils/compression';
 
 function ReadPageContent() {
   const params = useSearchParams();
@@ -28,6 +29,21 @@ function ReadPageContent() {
   ], []);
 
   const decoded = useMemo(() => {
+    // Try compressed URL first
+    const c = params.get('c');
+    if (c) {
+      try {
+        const currentUrl = window.location.href;
+        const parsed = parseShortUrl(currentUrl);
+        if (parsed) {
+          return parsed as { name: string; message: string; iconIndex: number; font?: string };
+        }
+      } catch (error) {
+        console.error('Failed to parse compressed URL:', error);
+      }
+    }
+    
+    // Fallback to original method
     const d = params.get('d');
     if (!d) return null;
     try {
