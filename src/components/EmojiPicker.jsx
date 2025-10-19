@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Smile, Search, X } from 'lucide-react';
-import type { EmojiPickerProps, PopupConfig, ScrollbarHiddenStyles } from '../types/editor';
 
 // Constants
 const EMOJI_CATEGORIES = {

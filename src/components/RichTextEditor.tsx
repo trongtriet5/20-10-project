@@ -71,22 +71,41 @@ const useEditorCommands = (editorRef: React.RefObject<HTMLDivElement | null>, ha
       editorRef.current.focus();
       
       const selection = window.getSelection();
+      
+      // Nếu có selection và nằm trong editor
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
         
-        if (editorRef.current.contains(range.commonAncestorContainer) || 
-            editorRef.current.contains(range.startContainer) || 
-            editorRef.current.contains(range.endContainer)) {
+        if (editorRef.current.contains(range.commonAncestorContainer)) {
+          // Chèn emoji tại vị trí con trỏ hiện tại
           range.deleteContents();
           range.insertNode(document.createTextNode(emoji));
           range.collapse(false);
           selection.removeAllRanges();
           selection.addRange(range);
         } else {
-          editorRef.current.innerHTML += emoji;
+          // Nếu selection không trong editor, chèn vào cuối
+          const range = document.createRange();
+          range.selectNodeContents(editorRef.current);
+          range.collapse(false);
+          range.insertNode(document.createTextNode(emoji));
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
         }
       } else {
-        editorRef.current.innerHTML += emoji;
+        // Nếu không có selection, tạo range tại cuối editor
+        const range = document.createRange();
+        range.selectNodeContents(editorRef.current);
+        range.collapse(false);
+        range.insertNode(document.createTextNode(emoji));
+        range.collapse(false);
+        
+        const newSelection = window.getSelection();
+        if (newSelection) {
+          newSelection.removeAllRanges();
+          newSelection.addRange(range);
+        }
       }
       handleContentChange();
     }
@@ -108,6 +127,13 @@ export default function RichTextEditor({
   // Memoized toolbar buttons
   const toolbarButtons = useMemo(() => TOOLBAR_BUTTONS, []);
   const alignmentButtons = useMemo(() => ALIGNMENT_BUTTONS, []);
+
+  // Lưu vị trí con trỏ khi click vào editor
+  const handleEditorClick = useCallback(() => {
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
+  }, [editorRef]);
 
   // Memoized components
   const ToolbarButton = useCallback(({ command, icon: Icon, title }: { command: string; icon: any; title: string }) => (
@@ -217,6 +243,8 @@ export default function RichTextEditor({
           contentEditable
           suppressContentEditableWarning
           onInput={handleContentChange}
+          onClick={handleEditorClick}
+          onKeyUp={handleEditorClick}
           className={`${EDITOR_CONFIG.minHeight} ${EDITOR_CONFIG.maxHeight} overflow-auto focus:outline-none ${EDITOR_CONFIG.fontSize} ${EDITOR_CONFIG.textAlign}`}
           style={{ fontFamily }}
           role="textbox"

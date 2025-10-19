@@ -68,18 +68,17 @@ const POPUP_CONFIG: PopupConfig = {
   textSize: 'text-lg'
 };
 
-const SCROLLBAR_HIDDEN_STYLES: ScrollbarHiddenStyles = {
+const SCROLLBAR_HIDDEN_STYLES: React.CSSProperties = {
   scrollbarWidth: 'none',
-  msOverflowStyle: 'none',
-  WebkitScrollbar: { display: 'none' }
-};
+  msOverflowStyle: 'none'
+} as React.CSSProperties;
 
 // Custom hook for click outside detection
-const useClickOutside = (refs, callback) => {
+const useClickOutside = (refs: React.RefObject<HTMLElement | null>[], callback: () => void) => {
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: MouseEvent) => {
       const isOutside = refs.every(ref => 
-        ref.current && !ref.current.contains(event.target)
+        ref.current && !ref.current.contains(event.target as Node)
       );
       if (isOutside) {
         callback();
@@ -92,7 +91,7 @@ const useClickOutside = (refs, callback) => {
 };
 
 // Custom hook for emoji filtering
-const useEmojiFilter = (searchTerm) => {
+const useEmojiFilter = (searchTerm: string) => {
   return useMemo(() => {
     if (!searchTerm.trim()) return EMOJI_DATA;
     
@@ -110,14 +109,14 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const popupRef = useRef(null);
-  const buttonRef = useRef(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   
   // Use custom hooks
   const filteredEmojis = useEmojiFilter(searchTerm);
   
   // Memoized callbacks
-  const handleEmojiSelect = useCallback((emoji) => {
+  const handleEmojiSelect = useCallback((emoji: string) => {
     onSelect(emoji);
     setIsOpen(false);
     setSearchTerm('');
@@ -200,7 +199,10 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
           {/* Grid emoji */}
           <div 
             className="flex-1 overflow-y-auto p-2" 
-            style={SCROLLBAR_HIDDEN_STYLES}
+            style={{
+              ...SCROLLBAR_HIDDEN_STYLES,
+              WebkitScrollbar: { display: 'none' }
+            } as React.CSSProperties}
           >
             <div className={`grid ${POPUP_CONFIG.gridCols} gap-1`}>
               {filteredEmojis.map((emoji, index) => (
