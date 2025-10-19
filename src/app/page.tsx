@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry, Download, Volume2, VolumeX } from 'lucide-react';
+import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry, Download, Volume2, VolumeX, Link as LinkIcon, Check, Zap, PartyPopper, Candy, IceCream, Camera, Music, Palette, Feather, Leaf, Cloud, Coffee, Wine, Trophy, Medal, Rocket, Crown, Smile } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import Fireworks from '@/components/Fireworks';
+import RichTextEditor from '@/components/RichTextEditor';
 
 export default function Home() {
   const [name, setName] = useState('');
@@ -15,6 +16,13 @@ export default function Home() {
   const [isMuted, setIsMuted] = useState(false);
   const [showMusicPrompt, setShowMusicPrompt] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [message, setMessage] = useState('');
+  const [editorHtml, setEditorHtml] = useState('');
+  const [selectedIconIndex, setSelectedIconIndex] = useState<number | null>(null);
+  const [selectedWish, setSelectedWish] = useState<string | null>(null);
+  const [mode, setMode] = useState<'self' | 'send'>('self');
+  const [selectedFont, setSelectedFont] = useState<string>("Inter, Arial, sans-serif");
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Khởi tạo nhạc nền với nhiều cách tiếp cận
@@ -69,6 +77,29 @@ export default function Home() {
       document.removeEventListener('touchstart', handleUserInteraction);
     };
   }, [showMusicPrompt, isMuted]);
+  // Auto-load Google Fonts when selected
+  useEffect(() => {
+    const fontToHref: Record<string, string> = {
+      "'Dancing Script', cursive": 'https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&display=swap',
+      "'Pacifico', cursive": 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap',
+      "'Great Vibes', cursive": 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap',
+      "'Lobster', cursive": 'https://fonts.googleapis.com/css2?family=Lobster&display=swap',
+      "'Playfair Display', serif": 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
+    };
+    const href = fontToHref[selectedFont];
+    if (!href) return;
+    const id = `gf-${btoa(selectedFont).replace(/=/g, '')}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+    return () => {
+      // keep font loaded for navigation; do not remove
+    };
+  }, [selectedFont]);
+
 
 
   // Xử lý tắt/bật nhạc
@@ -89,6 +120,13 @@ export default function Home() {
     if (name.trim()) {
       // Hiệu ứng pháo hoa
       setShowFireworks(true);
+      // Cố định icon và lời chúc để không thay đổi khi re-render
+      const fixedIconIndex = (mode === 'send' && selectedIconIndex !== null)
+        ? selectedIconIndex
+        : Math.floor(Math.random() * cuteIcons.length);
+      setSelectedIconIndex(fixedIconIndex);
+      const fixedWish = (mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : randomWish;
+      setSelectedWish(fixedWish);
       setTimeout(() => {
         setShowFireworks(false);
         setShowLetter(true); // Hiển thị bức thư thay vì lời chúc
@@ -162,7 +200,8 @@ export default function Home() {
         'text-red-400': '#f87171',
         'text-rose-400': '#fb7185'
       };
-      const strokeColor = colorMap[randomIcon.color as keyof typeof colorMap] || '#ec4899';
+      const iconIdx = (selectedIconIndex ?? 0);
+      const strokeColor = colorMap[cuteIcons[iconIdx].color as keyof typeof colorMap] || '#ec4899';
       iconSvg.setAttribute('stroke', strokeColor);
       iconSvg.setAttribute('stroke-width', '2');
       iconSvg.setAttribute('stroke-linecap', 'round');
@@ -185,8 +224,8 @@ export default function Home() {
         Gift: 'M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'
       };
       
-      // Lấy tên icon từ randomIcon bằng cách tìm index trong mảng cuteIcons
-      const iconIndex = cuteIcons.findIndex(icon => icon.icon === randomIcon.icon);
+      // Lấy tên icon theo chỉ số đã cố định
+      const iconIndex = (selectedIconIndex ?? 0);
       const iconNames = ['Heart', 'Flower', 'Bird', 'Rainbow', 'Sun', 'Moon', 'Cherry', 'Star', 'Sparkles', 'Gift'];
       const iconName = iconNames[iconIndex] || 'Heart';
       const iconPath = iconPaths[iconName as keyof typeof iconPaths] || iconPaths.Heart;
@@ -197,14 +236,14 @@ export default function Home() {
       
       // Tiêu đề
       const title = document.createElement('h2');
-      title.textContent = `Chào ${name}! 💕`;
+      title.textContent = `Thư gửi tới ${name} 💕`;
       title.style.cssText = `
         font-size: 36px;
         font-weight: bold;
         color: #be185d;
         margin: 0 0 40px 0;
         text-align: center;
-        font-family: 'Arial', sans-serif;
+        font-family: ${selectedFont};
         line-height: 1.2;
       `;
       
@@ -219,15 +258,16 @@ export default function Home() {
         box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.1);
       `;
       
-      const wishText = document.createElement('p');
-      wishText.textContent = randomWish;
+      const wishText = document.createElement('div');
+      const finalWishForImage = selectedWish ?? ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish));
+      wishText.innerHTML = finalWishForImage;
       wishText.style.cssText = `
         font-size: 20px;
         color: #be185d;
         line-height: 1.8;
         margin: 0;
         text-align: left;
-        font-family: 'Arial', sans-serif;
+        font-family: ${selectedFont};
       `;
       
       // Chữ ký
@@ -303,6 +343,29 @@ export default function Home() {
     }
   };
 
+  const handleCreateShareLink = async () => {
+    try {
+      const iconIndex = (selectedIconIndex ?? 0);
+      const payload = {
+        name,
+        message: (selectedWish ?? ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish))),
+        iconIndex: iconIndex >= 0 ? iconIndex : 0,
+        font: selectedFont,
+      };
+      const json = JSON.stringify(payload);
+      const base64 = btoa(unescape(encodeURIComponent(json)));
+      const url = `${window.location.origin}/read?d=${encodeURIComponent(base64)}`;
+
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error('Copy failed', e);
+      alert('Không thể copy link. Bạn hãy thử lại nhé!');
+    }
+  };
+
+
   const wishes = [
     "Chúc nàng một ngày 20/10 tràn ngập yêu thương và tiếng cười! Mong rằng những ước mơ nhỏ bé của nàng đều sẽ trở thành hiện thực, và mỗi ngày đều mang đến cho nàng niềm vui, hạnh phúc cùng những điều bất ngờ đáng yêu nhất! 💐",
   
@@ -330,21 +393,76 @@ export default function Home() {
 
   // Mảng các icon cute
   const cuteIcons = [
-    { icon: Heart, color: "text-pink-500" },
-    { icon: Flower, color: "text-pink-400" },
-    { icon: Bird, color: "text-purple-400" },
-    { icon: Rainbow, color: "text-purple-500" },
-    { icon: Sun, color: "text-yellow-400" },
-    { icon: Moon, color: "text-blue-400" },
-    { icon: Cherry, color: "text-red-400" },
-    { icon: Star, color: "text-yellow-300" },
-    { icon: Sparkles, color: "text-pink-300" },
-    { icon: Gift, color: "text-rose-400" }
+    { icon: Heart, color: "text-pink-500", name: 'Heart' },
+    { icon: Flower, color: "text-pink-400", name: 'Flower' },
+    { icon: Bird, color: "text-purple-400", name: 'Bird' },
+    { icon: Rainbow, color: "text-purple-500", name: 'Rainbow' },
+    { icon: Sun, color: "text-yellow-400", name: 'Sun' },
+    { icon: Moon, color: "text-blue-400", name: 'Moon' },
+    { icon: Cherry, color: "text-red-400", name: 'Cherry' },
+    { icon: Star, color: "text-yellow-300", name: 'Star' },
+    { icon: Sparkles, color: "text-pink-300", name: 'Sparkles' },
+    { icon: Gift, color: "text-rose-400", name: 'Gift' },
+    { icon: Zap, color: "text-pink-400", name: 'Zap' },
+    { icon: PartyPopper, color: "text-rose-400", name: 'PartyPopper' },
+    { icon: Candy, color: "text-pink-500", name: 'Candy' },
+    { icon: IceCream, color: "text-pink-400", name: 'IceCream' },
+    { icon: Camera, color: "text-purple-400", name: 'Camera' },
+    { icon: Music, color: "text-blue-400", name: 'Music' },
+    { icon: Palette, color: "text-rose-400", name: 'Palette' },
+    { icon: Feather, color: "text-pink-500", name: 'Feather' },
+    { icon: Leaf, color: "text-green-500", name: 'Leaf' },
+    { icon: Cloud, color: "text-sky-400", name: 'Cloud' },
+    { icon: Coffee, color: "text-amber-600", name: 'Coffee' },
+    { icon: Wine, color: "text-red-500", name: 'Wine' },
+    { icon: Trophy, color: "text-yellow-500", name: 'Trophy' },
+    { icon: Medal, color: "text-yellow-500", name: 'Medal' },
+    { icon: Rocket, color: "text-indigo-500", name: 'Rocket' },
+    { icon: Crown, color: "text-yellow-500", name: 'Crown' },
+    { icon: Smile, color: "text-pink-400", name: 'Smile' },
   ];
 
-  // Chọn icon ngẫu nhiên
-  const randomIcon = cuteIcons[Math.floor(Math.random() * cuteIcons.length)];
-  const IconComponent = randomIcon.icon;
+  // Dùng icon đã cố định nếu có, tránh đổi khi tương tác
+  const displayIconIndex = selectedIconIndex ?? 0;
+  const IconComponent = cuteIcons[displayIconIndex].icon;
+  const displayIconColor = cuteIcons[displayIconIndex].color;
+
+  // Simple sanitizer to allow basic formatting and emoji
+  function sanitizeHtml(input: string): string {
+    const template = document.createElement('template');
+    template.innerHTML = input;
+    const allowedTags = new Set(['B', 'I', 'U', 'BR', 'DIV', 'P', 'SPAN']);
+    const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT, null);
+    const toRemove: Element[] = [];
+    while (walker.nextNode()) {
+      const el = walker.currentNode as Element;
+      if (!allowedTags.has(el.tagName)) {
+        toRemove.push(el);
+        continue;
+      }
+      // Strip all attributes except style-safe ones (we remove all for safety)
+      while (el.attributes.length > 0) {
+        el.removeAttribute(el.attributes[0].name);
+      }
+    }
+    toRemove.forEach((el) => {
+      const parent = el.parentNode;
+      if (!parent) return;
+      while (el.firstChild) parent.insertBefore(el.firstChild, el);
+      parent.removeChild(el);
+    });
+    return template.innerHTML;
+  }
+
+  function textToHtml(text: string): string {
+    // Convert plain text with newlines to <div> with <br>
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    return escaped.replace(/\n/g, '<br>');
+  }
+
 
   return (
     <div 
@@ -532,19 +650,72 @@ export default function Home() {
               transition={{ delay: 0.4 }}
               className="space-y-6"
             >
+              <div className="flex items-center justify-center gap-2 rounded-xl p-2">
+                <button
+                  type="button"
+                  onClick={() => setMode('self')}
+                  className={`px-4 py-2 rounded-lg text-sm sm:text-base font-medium ${mode === 'self' ? 'bg-pink-500 text-white' : 'bg-pink-100 text-pink-600 hover:bg-pink-200'}`}
+                >
+                  Nhận cho bản thân
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('send')}
+                  className={`px-4 py-2 rounded-lg text-sm sm:text-base font-medium ${mode === 'send' ? 'bg-pink-500 text-white' : 'bg-pink-100 text-pink-600 hover:bg-pink-200'}`}
+                >
+                  Gửi cho người khác
+                </button>
+              </div>
+
               <div>
                 <label className="block text-pink-500 font-medium mb-2">
-                  Nhập tên của bạn ở đây nè !!!
+                  {mode === 'self' ? 'Nhập tên của bạn ở đây nè !!!' : 'Tên người nhận'}
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Tên của nàng là gì ... ??"
+                  placeholder={mode === 'self' ? 'Tên của nàng là gì ... ??' : 'Tên người nhận là gì ... ??'}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-pink-100 focus:border-pink-300 focus:outline-none text-center text-base sm:text-lg placeholder-pink-200"
                   required
                 />
               </div>
+
+              {mode === 'send' && (
+              <div>
+                <label className="block text-pink-500 font-medium mb-2">
+                  Nội dung lời chúc (có thể định dạng và chèn emoji)
+                </label>
+                <div className="mb-2">
+                    <label className="text-pink-500 text-sm mr-2">Font:</label>
+                    <select
+                      value={selectedFont}
+                      onChange={(e) => setSelectedFont(e.target.value)}
+                      className="border-2 border-pink-100 rounded-lg px-3 py-2 text-sm"
+                    >
+                      <option value="Inter, Arial, sans-serif">Inter (mặc định)</option>
+                      <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                      <option value="Georgia, serif">Georgia</option>
+                      <option value="'Comic Sans MS', 'Comic Sans', cursive">Comic Sans</option>
+                      <option value="'Courier New', Courier, monospace">Courier New</option>
+                      <option value="'Dancing Script', cursive">Dancing Script (Google)</option>
+                      <option value="'Pacifico', cursive">Pacifico (Google)</option>
+                      <option value="'Great Vibes', cursive">Great Vibes (Google)</option>
+                      <option value="'Lobster', cursive">Lobster (Google)</option>
+                      <option value="'Playfair Display', serif">Playfair Display (Google)</option>
+                    </select>
+                  </div>
+                
+                <RichTextEditor
+                  content={editorHtml}
+                  onChange={setEditorHtml}
+                  fontFamily={selectedFont}
+                  className="relative"
+                />
+                
+                <p className="text-xs text-pink-400 mt-2">Rich text editor với hỗ trợ định dạng văn bản và emoji.</p>
+              </div>
+              )}
 
               <motion.button
                 type="submit"
@@ -565,7 +736,7 @@ export default function Home() {
                 className="w-full bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base"
               >
                 <Gift className="w-5 h-5" />
-                Nhận lời chúc
+                {mode === 'self' ? 'Nhận lời chúc' : 'Tạo lời chúc'}
                 <Sparkles className="w-5 h-5" />
               </motion.button>
             </motion.form>
@@ -613,22 +784,22 @@ export default function Home() {
                 transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                 className="mb-4"
               >
-                <IconComponent className={`w-16 h-16 sm:w-20 sm:h-20 ${randomIcon.color} mx-auto animate-pulse`} />
+                <IconComponent className={`w-16 h-16 sm:w-20 sm:h-20 ${displayIconColor} mx-auto animate-pulse`} />
               </motion.div>
               <h2 className="text-xl sm:text-2xl font-bold text-pink-500 mb-2">
-                Chào {name}! 💕
+                Thư gửi tới {name} 💕
               </h2>
             </motion.div>
 
-            <motion.div
+              <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
               className="bg-gradient-to-r from-pink-25 to-rose-25 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6"
             >
-              <p className="text-pink-600 text-sm sm:text-base leading-relaxed text-justify">
-                {randomWish}
-              </p>
+              <div className="text-pink-600 text-sm sm:text-base leading-relaxed text-justify" style={{ fontFamily: selectedFont }}>
+                <div dangerouslySetInnerHTML={{ __html: (selectedWish ?? ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish))) }} />
+              </div>
             </motion.div>
 
             <motion.div
@@ -649,6 +820,7 @@ export default function Home() {
                 Xác nhận lời chúc
               </motion.button>
               
+              {mode === 'self' && (
               <motion.button
                 onClick={handleExportLetter}
                 whileHover={{ scale: 1.05 }}
@@ -658,6 +830,19 @@ export default function Home() {
                 <Download className="w-4 h-4" />
                 Lưu thư dưới dạng hình ảnh
               </motion.button>
+              )}
+
+              {mode === 'send' && (
+              <motion.button
+                onClick={handleCreateShareLink}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-white text-pink-600 border border-pink-200 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium hover:bg-pink-50 transition-all duration-300 flex items-center gap-2 text-sm sm:text-base"
+              >
+                {copied ? <Check className="w-4 h-4" /> : <LinkIcon className="w-4 h-4" />}
+                {copied ? 'Đã copy link' : 'Tạo link chia sẻ'}
+              </motion.button>
+              )}
             </motion.div>
 
             <motion.div
