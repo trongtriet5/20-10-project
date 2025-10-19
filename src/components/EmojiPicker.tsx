@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Smile, Search, X } from 'lucide-react';
-import type { EmojiPickerProps, PopupConfig, ScrollbarHiddenStyles } from '../types/editor';
+import type { EmojiPickerProps, PopupConfig } from '../types/editor';
 
 // Constants
 const EMOJI_CATEGORIES = {
@@ -142,7 +142,12 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
       {/* Nút emoji */}
       <button
         ref={buttonRef}
-        onClick={togglePopup}
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          togglePopup();
+        }}
         className={`
           flex items-center justify-center w-10 h-10 rounded-lg 
           hover:bg-gray-100 transition-colors duration-200
@@ -173,7 +178,12 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-700">Chọn emoji</h3>
               <button
-                onClick={closePopup}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  closePopup();
+                }}
                 className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                 aria-label="Đóng emoji picker"
               >
@@ -206,16 +216,21 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
           >
             <div className={`grid ${POPUP_CONFIG.gridCols} gap-1`}>
               {filteredEmojis.map((emoji, index) => (
-                <button
-                  key={`${emoji}-${index}`}
-                  onClick={() => handleEmojiSelect(emoji)}
-                  className={`
-                    ${POPUP_CONFIG.emojiSize} flex items-center justify-center ${POPUP_CONFIG.textSize} 
-                    rounded-lg hover:bg-gray-100 hover:scale-110 transition-all duration-200
-                    active:scale-95
-                  `}
-                  title={emoji}
-                >
+              <button
+                key={`${emoji}-${index}`}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleEmojiSelect(emoji);
+                }}
+                className={`
+                  ${POPUP_CONFIG.emojiSize} flex items-center justify-center ${POPUP_CONFIG.textSize} 
+                  rounded-lg hover:bg-gray-100 hover:scale-110 transition-all duration-200
+                  active:scale-95
+                `}
+                title={emoji}
+              >
                   {emoji}
                 </button>
               ))}

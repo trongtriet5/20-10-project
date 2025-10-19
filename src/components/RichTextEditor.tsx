@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import EmojiPicker from './EmojiPicker';
 import { 
   Bold, 
@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import type { 
   RichTextEditorProps, 
-  ToolbarButton, 
   EditorConfig, 
   UseEditorContentReturn, 
   UseEditorCommandsReturn 
@@ -26,17 +25,6 @@ const EDITOR_CONFIG: EditorConfig = {
   textAlign: 'text-justify'
 };
 
-const TOOLBAR_BUTTONS: ToolbarButton[] = [
-  { command: 'bold', icon: Bold, title: 'In đậm' },
-  { command: 'italic', icon: Italic, title: 'In nghiêng' },
-  { command: 'underline', icon: UnderlineIcon, title: 'Gạch chân' }
-];
-
-const ALIGNMENT_BUTTONS: ToolbarButton[] = [
-  { command: 'justifyLeft', icon: AlignLeft, title: 'Căn trái' },
-  { command: 'justifyCenter', icon: AlignCenter, title: 'Căn giữa' },
-  { command: 'justifyRight', icon: AlignRight, title: 'Căn phải' }
-];
 
 // Custom hooks
 const useEditorContent = (content: string, onChange: (content: string) => void): UseEditorContentReturn => {
@@ -57,7 +45,7 @@ const useEditorContent = (content: string, onChange: (content: string) => void):
   return { editorRef, handleContentChange };
 };
 
-const useEditorCommands = (editorRef: React.RefObject<HTMLDivElement | null>, handleContentChange: () => void): UseEditorCommandsReturn => {
+const useEditorCommands = (editorRef: React.RefObject<HTMLDivElement | null>, handleContentChange: () => void, savedRange: Range | null, setSavedRange: (range: Range | null) => void): UseEditorCommandsReturn => {
   const executeCommand = useCallback((command: string, value?: string) => {
     if (editorRef.current) {
       editorRef.current.focus();
@@ -71,45 +59,52 @@ const useEditorCommands = (editorRef: React.RefObject<HTMLDivElement | null>, ha
       editorRef.current.focus();
       
       const selection = window.getSelection();
+      let range: Range;
       
-      // Nếu có selection và nằm trong editor
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
+      // Sử dụng vị trí đã lưu nếu có
+      if (savedRange && editorRef.current.contains(savedRange.commonAncestorContainer)) {
+        range = savedRange.cloneRange();
+      } else if (selection && selection.rangeCount > 0) {
+        const currentRange = selection.getRangeAt(0);
         
-        if (editorRef.current.contains(range.commonAncestorContainer)) {
-          // Chèn emoji tại vị trí con trỏ hiện tại
-          range.deleteContents();
-          range.insertNode(document.createTextNode(emoji));
-          range.collapse(false);
-          selection.removeAllRanges();
-          selection.addRange(range);
+        // Kiểm tra xem selection có nằm trong editor không
+        if (editorRef.current.contains(currentRange.commonAncestorContainer) || 
+            editorRef.current.contains(currentRange.startContainer) || 
+            editorRef.current.contains(currentRange.endContainer)) {
+          range = currentRange.cloneRange();
         } else {
           // Nếu selection không trong editor, chèn vào cuối
-          const range = document.createRange();
+          range = document.createRange();
           range.selectNodeContents(editorRef.current);
           range.collapse(false);
-          range.insertNode(document.createTextNode(emoji));
-          range.collapse(false);
-          selection.removeAllRanges();
-          selection.addRange(range);
         }
       } else {
-        // Nếu không có selection, tạo range tại cuối editor
-        const range = document.createRange();
+        // Nếu không có selection, chèn vào cuối editor
+        range = document.createRange();
         range.selectNodeContents(editorRef.current);
         range.collapse(false);
-        range.insertNode(document.createTextNode(emoji));
-        range.collapse(false);
-        
-        const newSelection = window.getSelection();
-        if (newSelection) {
-          newSelection.removeAllRanges();
-          newSelection.addRange(range);
-        }
       }
+      
+      // Chèn emoji
+      range.deleteContents();
+      const textNode = document.createTextNode(emoji);
+      range.insertNode(textNode);
+      range.collapse(false);
+      
+      // Cập nhật selection
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      
+      // Lưu vị trí mới sau khi chèn
+      setSavedRange(range.cloneRange());
+      
+      // Trigger input event để cập nhật content
+      const inputEvent = new Event('input', { bubbles: true });
+      editorRef.current.dispatchEvent(inputEvent);
+      
       handleContentChange();
     }
-  }, [editorRef, handleContentChange]);
+  }, [editorRef, handleContentChange, savedRange, setSavedRange]);
 
   return { executeCommand, insertEmoji };
 };
@@ -120,43 +115,78 @@ export default function RichTextEditor({
   fontFamily = "Inter, Arial, sans-serif",
   className = ""
 }: RichTextEditorProps) {
+  // State để lưu vị trí con trỏ
+  const [savedRange, setSavedRange] = useState<Range | null>(null);
+
   // Use custom hooks
   const { editorRef, handleContentChange } = useEditorContent(content, onChange);
-  const { executeCommand, insertEmoji } = useEditorCommands(editorRef, handleContentChange);
+  const { executeCommand, insertEmoji } = useEditorCommands(editorRef, handleContentChange, savedRange, setSavedRange);
 
-  // Memoized toolbar buttons
-  const toolbarButtons = useMemo(() => TOOLBAR_BUTTONS, []);
-  const alignmentButtons = useMemo(() => ALIGNMENT_BUTTONS, []);
+  // Cập nhật font family khi prop thay đổi
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.style.fontFamily = fontFamily;
+    }
+  }, [fontFamily, editorRef]);
 
-  // Lưu vị trí con trỏ khi click vào editor
-  const handleEditorClick = useCallback(() => {
+  // Lưu vị trí con trỏ hiện tại
+  const saveCursorPosition = useCallback(() => {
     if (editorRef.current) {
       editorRef.current.focus();
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        if (editorRef.current.contains(range.commonAncestorContainer) || 
+            editorRef.current.contains(range.startContainer) || 
+            editorRef.current.contains(range.endContainer)) {
+          setSavedRange(range.cloneRange());
+        }
+      }
     }
   }, [editorRef]);
 
-  // Memoized components
-  const ToolbarButton = useCallback(({ command, icon: Icon, title }: { command: string; icon: any; title: string }) => (
-    <button
-      onClick={() => executeCommand(command)}
-      className="p-2 rounded hover:bg-pink-100 text-pink-600 transition-colors"
-      title={title}
-      aria-label={title}
-    >
-      <Icon className="w-4 h-4" />
-    </button>
-  ), [executeCommand]);
 
-  const AlignmentButton = useCallback(({ command, icon: Icon, title }: { command: string; icon: any; title: string }) => (
-    <button
-      onClick={() => executeCommand(command)}
-      className="p-2 rounded hover:bg-pink-100 text-pink-600 transition-colors"
-      title={title}
-      aria-label={title}
-    >
-      <Icon className="w-4 h-4" />
-    </button>
-  ), [executeCommand]);
+  // Lưu vị trí con trỏ khi click vào editor
+  const handleEditorClick = useCallback(() => {
+    saveCursorPosition();
+  }, [saveCursorPosition]);
+
+  // Lưu vị trí con trỏ khi di chuyển
+  const handleSelectionChange = useCallback(() => {
+    saveCursorPosition();
+  }, [saveCursorPosition]);
+
+  // Xử lý paste để áp dụng font family
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    
+    const clipboardData = e.clipboardData;
+    const pastedText = clipboardData.getData('text/plain');
+    
+    if (pastedText && editorRef.current) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        
+        // Xóa nội dung được chọn
+        range.deleteContents();
+        
+        // Tạo text node với font family
+        const textNode = document.createTextNode(pastedText);
+        range.insertNode(textNode);
+        range.collapse(false);
+        
+        // Áp dụng font family cho toàn bộ editor
+        if (editorRef.current) {
+          editorRef.current.style.fontFamily = fontFamily;
+        }
+        
+        selection.removeAllRanges();
+        selection.addRange(range);
+        handleContentChange();
+      }
+    }
+  }, [fontFamily, handleContentChange, editorRef]);
 
   // Kiểm tra trạng thái format
   const isActive = (command: string) => {
@@ -245,6 +275,10 @@ export default function RichTextEditor({
           onInput={handleContentChange}
           onClick={handleEditorClick}
           onKeyUp={handleEditorClick}
+          onMouseUp={handleSelectionChange}
+          onKeyDown={saveCursorPosition}
+          onMouseDown={saveCursorPosition}
+          onPaste={handlePaste}
           className={`${EDITOR_CONFIG.minHeight} ${EDITOR_CONFIG.maxHeight} overflow-auto focus:outline-none ${EDITOR_CONFIG.fontSize} ${EDITOR_CONFIG.textAlign}`}
           style={{ fontFamily }}
           role="textbox"

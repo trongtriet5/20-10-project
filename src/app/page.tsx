@@ -17,7 +17,6 @@ export default function Home() {
   const [showMusicPrompt, setShowMusicPrompt] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [message, setMessage] = useState('');
   const [editorHtml, setEditorHtml] = useState('');
   const [selectedIconIndex, setSelectedIconIndex] = useState<number | null>(null);
   const [selectedWish, setSelectedWish] = useState<string | null>(null);
@@ -38,7 +37,7 @@ export default function Home() {
           console.log('Nhạc nền đã phát thành công');
           setIsMuted(false);
           setShowMusicPrompt(false);
-        } catch (error) {
+        } catch {
           console.log('Autoplay bị chặn, thử lại sau');
           // Không set muted ngay, để thử lại
           setShowMusicPrompt(true);
@@ -337,8 +336,8 @@ export default function Home() {
       link.click();
       document.body.removeChild(link);
       document.body.removeChild(letterElement);
-    } catch (error) {
-      console.error('Lỗi khi xuất hình ảnh:', error);
+    } catch {
+      console.error('Lỗi khi xuất hình ảnh');
       alert('Có lỗi xảy ra khi xuất hình ảnh. Vui lòng thử lại!');
     }
   };

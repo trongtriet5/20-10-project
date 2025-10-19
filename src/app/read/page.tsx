@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry } from 'lucide-react';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 
-export default function ReadPage() {
+function ReadPageContent() {
   const params = useSearchParams();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [fontLoaded, setFontLoaded] = useState(false);
 
   const cuteIcons = useMemo(() => [
     { icon: Heart, color: "text-pink-500" },
@@ -31,16 +30,39 @@ export default function ReadPage() {
       // Decode base64 (URL param already percent-decoded by useSearchParams)
       const json = decodeURIComponent(escape(atob(d)));
       return JSON.parse(json) as { name: string; message: string; iconIndex: number; font?: string };
-    } catch (err) {
+    } catch {
       return null;
     }
   }, [params]);
+
+  const fontFamily = decoded?.font || 'Inter, Arial, sans-serif';
 
   useEffect(() => {
     if (!decoded) {
       setError('Link không hợp lệ hoặc đã bị hỏng.');
     }
   }, [decoded]);
+
+  // Auto-inject Google font if necessary
+  useEffect(() => {
+    const fontToHref: Record<string, string> = {
+      "'Dancing Script', cursive": 'https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&display=swap',
+      "'Pacifico', cursive": 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap',
+      "'Great Vibes', cursive": 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap',
+      "'Lobster', cursive": 'https://fonts.googleapis.com/css2?family=Lobster&display=swap',
+      "'Playfair Display', serif": 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
+    };
+    const href = fontToHref[fontFamily];
+    if (!href) return;
+    const id = `gf-${btoa(fontFamily).replace(/=/g, '')}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.onload = () => {};
+    document.head.appendChild(link);
+  }, [fontFamily]);
 
   if (error) {
     return (
@@ -71,28 +93,6 @@ export default function ReadPage() {
   const index = decoded.iconIndex >= 0 && decoded.iconIndex < cuteIcons.length ? decoded.iconIndex : 0;
   const IconComponent = cuteIcons[index].icon;
   const colorClass = cuteIcons[index].color;
-  const fontFamily = decoded.font || 'Inter, Arial, sans-serif';
-
-  // Auto-inject Google font if necessary
-  useEffect(() => {
-    const fontToHref: Record<string, string> = {
-      "'Dancing Script', cursive": 'https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&display=swap',
-      "'Pacifico', cursive": 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap',
-      "'Great Vibes', cursive": 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap',
-      "'Lobster', cursive": 'https://fonts.googleapis.com/css2?family=Lobster&display=swap',
-      "'Playfair Display', serif": 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
-    };
-    const href = fontToHref[fontFamily];
-    if (!href) { setFontLoaded(true); return; }
-    const id = `gf-${btoa(fontFamily).replace(/=/g, '')}`;
-    if (document.getElementById(id)) { setFontLoaded(true); return; }
-    const link = document.createElement('link');
-    link.id = id;
-    link.rel = 'stylesheet';
-    link.href = href;
-    link.onload = () => setFontLoaded(true);
-    document.head.appendChild(link);
-  }, [fontFamily]);
 
   return (
     <div 
@@ -124,6 +124,32 @@ export default function ReadPage() {
         </div>
       </ResponsiveContainer>
     </div>
+  );
+}
+
+export default function ReadPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center p-4" style={{
+        backgroundImage: 'url(/tulip.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}>
+        <ResponsiveContainer>
+          <div className="bg-white/75 backdrop-blur-sm rounded-2xl shadow-xl p-6 text-center">
+            <div className="animate-pulse">
+              <div className="w-16 h-16 bg-pink-200 rounded-full mx-auto mb-4"></div>
+              <div className="h-4 bg-pink-200 rounded w-3/4 mx-auto mb-2"></div>
+              <div className="h-4 bg-pink-200 rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
+        </ResponsiveContainer>
+      </div>
+    }>
+      <ReadPageContent />
+    </Suspense>
   );
 }
 
