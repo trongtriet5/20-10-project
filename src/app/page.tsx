@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry, Download, Volume2, VolumeX, Link as LinkIcon, Check, Zap, PartyPopper, Candy, IceCream, Camera, Music, Palette, Feather, Leaf, Cloud, Coffee, Wine, Trophy, Medal, Rocket, Crown, Smile } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -8,7 +9,8 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import Fireworks from '@/components/Fireworks';
 import RichTextEditor from '@/components/RichTextEditor';
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [name, setName] = useState('');
   const [showWish, setShowWish] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
@@ -22,7 +24,44 @@ export default function Home() {
   const [selectedWish, setSelectedWish] = useState<string | null>(null);
   const [mode, setMode] = useState<'self' | 'send'>('self');
   const [selectedFont, setSelectedFont] = useState<string>("Inter, Arial, sans-serif");
+  const [isLoadingSharedData, setIsLoadingSharedData] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Load shared data if URL contains it
+  useEffect(() => {
+    const d = searchParams.get('d');
+    if (d) {
+      setIsLoadingSharedData(true);
+      try {
+        // Decode shared data
+        const json = decodeURIComponent(escape(atob(d)));
+        const sharedData = JSON.parse(json) as { name: string; message: string; iconIndex: number; font?: string };
+        
+        // Set the shared data but don't show wish yet
+        setName(sharedData.name);
+        setSelectedIconIndex(sharedData.iconIndex);
+        setSelectedFont(sharedData.font || "Inter, Arial, sans-serif");
+        setMode('send');
+        
+        // Auto-trigger the letter opening animation first
+        setTimeout(() => {
+          console.log('Starting letter opening animation...');
+          setShowWish(true);
+          setShowLetter(true);
+          // Set the wish content after animation starts
+          setTimeout(() => {
+            console.log('Setting wish content...');
+            setSelectedWish(sharedData.message);
+            setIsLoadingSharedData(false);
+          }, 1500); // Delay to ensure animation is visible
+        }, 1000); // Delay to show the opening animation
+        
+      } catch (error) {
+        console.error('Error decoding shared data:', error);
+        setIsLoadingSharedData(false);
+      }
+    }
+  }, [searchParams]);
 
   // Khởi tạo nhạc nền với nhiều cách tiếp cận
   useEffect(() => {
@@ -258,7 +297,7 @@ export default function Home() {
       `;
       
       const wishText = document.createElement('div');
-      const finalWishForImage = selectedWish ?? ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish));
+      const finalWishForImage = selectedWish || ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish));
       wishText.innerHTML = finalWishForImage;
       wishText.style.cssText = `
         font-size: 20px;
@@ -347,7 +386,7 @@ export default function Home() {
       const iconIndex = (selectedIconIndex ?? 0);
       const payload = {
         name,
-        message: (selectedWish ?? ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish))),
+        message: (selectedWish || ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish))),
         iconIndex: iconIndex >= 0 ? iconIndex : 0,
         font: selectedFont,
       };
@@ -797,7 +836,7 @@ export default function Home() {
               className="bg-gradient-to-r from-pink-25 to-rose-25 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6"
             >
               <div className="text-pink-600 text-sm sm:text-base leading-relaxed text-justify" style={{ fontFamily: selectedFont }}>
-                <div dangerouslySetInnerHTML={{ __html: (selectedWish ?? ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish))) }} />
+                <div dangerouslySetInnerHTML={{ __html: (isLoadingSharedData ? '' : (selectedWish || ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish)))) }} />
               </div>
             </motion.div>
 
@@ -871,5 +910,31 @@ export default function Home() {
         ) : null}
       </ResponsiveContainer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{
+        backgroundImage: 'url(/tulip.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}>
+        <ResponsiveContainer>
+          <div className="bg-white/75 backdrop-blur-sm rounded-2xl shadow-xl p-6 text-center">
+            <div className="animate-pulse">
+              <div className="w-16 h-16 bg-pink-200 rounded-full mx-auto mb-4"></div>
+              <div className="h-4 bg-pink-200 rounded w-3/4 mx-auto mb-2"></div>
+              <div className="h-4 bg-pink-200 rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
+        </ResponsiveContainer>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
