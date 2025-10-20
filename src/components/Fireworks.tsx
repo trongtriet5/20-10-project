@@ -108,7 +108,7 @@ export default function Fireworks() {
           }}
           initial={{ y: -50, opacity: 1 }}
           animate={{
-            y: window.innerHeight + 50,
+            y: typeof window !== 'undefined' ? window.innerHeight + 50 : 1000,
             x: Math.random() * 200 - 100,
             rotate: 360,
             opacity: [1, 1, 0]

@@ -102,14 +102,18 @@ function HomeContent() {
     };
 
     // Lắng nghe mọi tương tác của người dùng
-    document.addEventListener('click', handleUserInteraction, { once: true });
-    document.addEventListener('keydown', handleUserInteraction, { once: true });
-    document.addEventListener('touchstart', handleUserInteraction, { once: true });
+    if (typeof document !== 'undefined') {
+      document.addEventListener('click', handleUserInteraction, { once: true });
+      document.addEventListener('keydown', handleUserInteraction, { once: true });
+      document.addEventListener('touchstart', handleUserInteraction, { once: true });
+    }
 
     return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('click', handleUserInteraction);
+        document.removeEventListener('keydown', handleUserInteraction);
+        document.removeEventListener('touchstart', handleUserInteraction);
+      }
     };
   }, [showMusicPrompt, isMuted]);
   // Auto-load Google Fonts when selected
@@ -122,7 +126,7 @@ function HomeContent() {
       "'Playfair Display', serif": 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
     };
     const href = fontToHref[selectedFont];
-    if (!href) return;
+    if (!href || typeof document === 'undefined') return;
     const id = `gf-${btoa(selectedFont).replace(/=/g, '')}`;
     if (document.getElementById(id)) return;
     const link = document.createElement('link');
@@ -172,6 +176,8 @@ function HomeContent() {
   };
 
   const handleExportLetter = async () => {
+    if (typeof document === 'undefined') return;
+    
     try {
       // Tạo một bức thư đã mở để xuất hình ảnh (chỉ nội dung, không có button)
       const letterElement = document.createElement('div');
@@ -416,7 +422,7 @@ function HomeContent() {
       };
       
       // Tạo link gốc với base64
-      const baseUrl = `${window.location.origin}/read`;
+      const baseUrl = typeof window !== 'undefined' ? `${window.location.origin}/read` : '/read';
       const base64 = encodeForUrl(payload);
       const originalUrl = `${baseUrl}?d=${encodeURIComponent(base64)}`;
       
@@ -470,6 +476,8 @@ function HomeContent() {
 
   // Simple sanitizer to allow basic formatting and emoji
   function sanitizeHtml(input: string): string {
+    if (typeof document === 'undefined') return input;
+    
     const template = document.createElement('template');
     template.innerHTML = input;
     const allowedTags = new Set(['B', 'I', 'U', 'BR', 'DIV', 'P', 'SPAN']);

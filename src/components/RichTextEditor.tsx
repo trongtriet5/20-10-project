@@ -47,7 +47,7 @@ const useEditorContent = (content: string, onChange: (content: string) => void):
 
 const useEditorCommands = (editorRef: React.RefObject<HTMLDivElement | null>, handleContentChange: () => void, savedRange: Range | null, setSavedRange: (range: Range | null) => void): UseEditorCommandsReturn => {
   const executeCommand = useCallback((command: string, value?: string) => {
-    if (editorRef.current) {
+    if (editorRef.current && typeof document !== 'undefined') {
       editorRef.current.focus();
       document.execCommand(command, false, value);
       handleContentChange();
@@ -55,7 +55,7 @@ const useEditorCommands = (editorRef: React.RefObject<HTMLDivElement | null>, ha
   }, [editorRef, handleContentChange]);
 
   const insertEmoji = useCallback((emoji: string) => {
-    if (editorRef.current) {
+    if (editorRef.current && typeof document !== 'undefined' && typeof window !== 'undefined') {
       editorRef.current.focus();
       
       const selection = window.getSelection();
@@ -131,7 +131,7 @@ export default function RichTextEditor({
 
   // Lưu vị trí con trỏ hiện tại
   const saveCursorPosition = useCallback(() => {
-    if (editorRef.current) {
+    if (editorRef.current && typeof window !== 'undefined') {
       editorRef.current.focus();
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
@@ -163,7 +163,7 @@ export default function RichTextEditor({
     const clipboardData = e.clipboardData;
     const pastedText = clipboardData.getData('text/plain');
     
-    if (pastedText && editorRef.current) {
+    if (pastedText && editorRef.current && typeof window !== 'undefined' && typeof document !== 'undefined') {
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
@@ -190,7 +190,7 @@ export default function RichTextEditor({
 
   // Kiểm tra trạng thái format
   const isActive = (command: string) => {
-    return document.queryCommandState(command);
+    return typeof document !== 'undefined' ? document.queryCommandState(command) : false;
   };
 
   return (

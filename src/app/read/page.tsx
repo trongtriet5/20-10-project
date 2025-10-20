@@ -48,7 +48,7 @@ function ReadPageContent() {
       "'Playfair Display', serif": 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
     };
     const href = fontToHref[fontFamily];
-    if (!href) return;
+    if (!href || typeof document === 'undefined') return;
     const id = `gf-${btoa(fontFamily).replace(/=/g, '')}`;
     if (document.getElementById(id)) return;
     const link = document.createElement('link');
