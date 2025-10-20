@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Heart, Sparkles } from 'lucide-react';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
-import QRCodeGenerator from '@/components/QRCodeGenerator';
 import { parseShortUrl } from '@/utils/compression';
 
 function ReadPageContent() {
@@ -15,7 +14,6 @@ function ReadPageContent() {
   const [showLetter, setShowLetter] = useState(false);
   const [showWish, setShowWish] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [currentUrl, setCurrentUrl] = useState<string>('');
 
 
   const decoded = useMemo(() => {
@@ -62,35 +60,12 @@ function ReadPageContent() {
 
   const fontFamily = decoded?.font || 'Inter, Arial, sans-serif';
 
-  // Cập nhật URL hiện tại khi component mount
-  useEffect(() => {
-    // Kiểm tra xem có đang chạy trên client không
-    if (typeof window === 'undefined') return;
-    
-    // Đảm bảo URL được tạo chính xác với tham số hiện tại
-    const c = params.get('c');
-    const d = params.get('d');
-    
-    if (c) {
-      // Sử dụng URL nén - đảm bảo encode đúng
-      const encodedC = encodeURIComponent(c);
-      setCurrentUrl(`${window.location.origin}${window.location.pathname}?c=${encodedC}`);
-    } else if (d) {
-      // Sử dụng URL gốc - đảm bảo encode đúng
-      const encodedD = encodeURIComponent(d);
-      setCurrentUrl(`${window.location.origin}${window.location.pathname}?d=${encodedD}`);
-    } else {
-      // Fallback
-      setCurrentUrl(window.location.href);
-    }
-  }, [params]);
 
   useEffect(() => {
     if (!decoded) {
       console.log('No decoded data found. Params:', {
         c: params.get('c'),
-        d: params.get('d'),
-        currentUrl
+        d: params.get('d')
       });
       setError('Link không hợp lệ hoặc đã bị hỏng.');
     } else if (decoded && !isInitialized) {
@@ -101,25 +76,8 @@ function ReadPageContent() {
         setIsInitialized(true);
       }, 1000);
     }
-  }, [decoded, isInitialized, params, currentUrl]);
+  }, [decoded, isInitialized, params]);
 
-  // Đảm bảo currentUrl được set sau khi component mount
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !currentUrl) {
-      const c = params.get('c');
-      const d = params.get('d');
-      
-      if (c) {
-        const encodedC = encodeURIComponent(c);
-        setCurrentUrl(`${window.location.origin}${window.location.pathname}?c=${encodedC}`);
-      } else if (d) {
-        const encodedD = encodeURIComponent(d);
-        setCurrentUrl(`${window.location.origin}${window.location.pathname}?d=${encodedD}`);
-      } else {
-        setCurrentUrl(window.location.href);
-      }
-    }
-  }, [params, currentUrl]);
 
   // Auto-inject Google font if necessary
   useEffect(() => {
@@ -347,31 +305,11 @@ function ReadPageContent() {
               </motion.button>
             </motion.div>
 
-            {/* QR Code Generator */}
-            {currentUrl && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 }}
-                className="mt-6"
-              >
-                <QRCodeGenerator 
-                  url={currentUrl}
-                  data={{
-                    name: decoded.name,
-                    message: decoded.message,
-                    iconIndex: 0, // Sử dụng icon Heart (index 0)
-                    font: decoded.font || 'Inter, Arial, sans-serif'
-                  }}
-                />
-              </motion.div>
-            )}
             
             {/* Debug info - chỉ hiển thị trong development */}
             {process.env.NODE_ENV === 'development' && (
               <div className="mt-4 p-4 bg-gray-100 rounded text-xs">
                 <p>Debug Info:</p>
-                <p>currentUrl: {currentUrl || 'Chưa có'}</p>
                 <p>decoded: {decoded ? 'Có dữ liệu' : 'Không có dữ liệu'}</p>
                 <p>window available: {typeof window !== 'undefined' ? 'Có' : 'Không'}</p>
                 <p>params c: {params.get('c') ? 'Có' : 'Không'}</p>
