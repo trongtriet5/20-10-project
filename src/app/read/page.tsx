@@ -23,11 +23,14 @@ function ReadPageContent() {
     const c = params.get('c');
     if (c) {
       try {
-        // Reconstruct the current URL properly
-        const currentUrl = `${window.location.origin}${window.location.pathname}?c=${c}`;
-        const parsed = parseShortUrl(currentUrl);
-        if (parsed) {
-          return parsed as { name: string; message: string; font?: string };
+        // Kiểm tra xem có đang chạy trên client không
+        if (typeof window !== 'undefined') {
+          // Reconstruct the current URL properly
+          const currentUrl = `${window.location.origin}${window.location.pathname}?c=${c}`;
+          const parsed = parseShortUrl(currentUrl);
+          if (parsed) {
+            return parsed as { name: string; message: string; font?: string };
+          }
         }
       } catch (error) {
         console.error('Failed to parse compressed URL:', error);
@@ -50,6 +53,9 @@ function ReadPageContent() {
 
   // Cập nhật URL hiện tại khi component mount
   useEffect(() => {
+    // Kiểm tra xem có đang chạy trên client không
+    if (typeof window === 'undefined') return;
+    
     // Đảm bảo URL được tạo chính xác với tham số hiện tại
     const c = params.get('c');
     const d = params.get('d');
@@ -77,6 +83,22 @@ function ReadPageContent() {
       }, 1000);
     }
   }, [decoded, isInitialized]);
+
+  // Đảm bảo currentUrl được set sau khi component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !currentUrl) {
+      const c = params.get('c');
+      const d = params.get('d');
+      
+      if (c) {
+        setCurrentUrl(`${window.location.origin}${window.location.pathname}?c=${c}`);
+      } else if (d) {
+        setCurrentUrl(`${window.location.origin}${window.location.pathname}?d=${d}`);
+      } else {
+        setCurrentUrl(window.location.href);
+      }
+    }
+  }, [params, currentUrl]);
 
   // Auto-inject Google font if necessary
   useEffect(() => {
@@ -322,6 +344,16 @@ function ReadPageContent() {
                   }}
                 />
               </motion.div>
+            )}
+            
+            {/* Debug info - chỉ hiển thị trong development */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-4 p-4 bg-gray-100 rounded text-xs">
+                <p>Debug Info:</p>
+                <p>currentUrl: {currentUrl || 'Chưa có'}</p>
+                <p>decoded: {decoded ? 'Có dữ liệu' : 'Không có dữ liệu'}</p>
+                <p>window available: {typeof window !== 'undefined' ? 'Có' : 'Không'}</p>
+              </div>
             )}
 
             <motion.div
