@@ -22,7 +22,7 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
 
   // Calculate compression ratio if data is provided
   const calculateCompressionRatio = useCallback(() => {
-    if (data) {
+    if (data && typeof data === 'object') {
       try {
         // Create original JSON string for comparison
         const originalJson = JSON.stringify(data);
@@ -30,7 +30,10 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
         setCompressionRatio(result.ratio);
       } catch (error) {
         console.error('Error calculating compression ratio:', error);
+        setCompressionRatio(0);
       }
+    } else {
+      setCompressionRatio(0);
     }
   }, [data]);
 
@@ -38,6 +41,13 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
   const generateQRCode = async (text: string) => {
     try {
       setIsGenerating(true);
+      
+      // Kiểm tra độ dài text trước khi tạo QR code
+      if (text.length > 2953) { // Giới hạn QR code v1-M
+        console.warn('Text too long for QR code, truncating...');
+        text = text.substring(0, 2953);
+      }
+      
       const dataUrl = await QRCodeLib.toDataURL(text, {
         width: 300,
         margin: 2,
@@ -50,6 +60,22 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
       setQrCodeDataUrl(dataUrl);
     } catch (error) {
       console.error('Error generating QR code:', error);
+      // Fallback: tạo QR code với text ngắn hơn
+      try {
+        const shortText = text.substring(0, 1000);
+        const dataUrl = await QRCodeLib.toDataURL(shortText, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#be185d',
+            light: '#ffffff'
+          },
+          errorCorrectionLevel: 'L' // Sử dụng error correction level thấp hơn
+        });
+        setQrCodeDataUrl(dataUrl);
+      } catch (fallbackError) {
+        console.error('Fallback QR generation also failed:', fallbackError);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -58,6 +84,9 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
   // Tạo QR code khi component mount
   useEffect(() => {
     const initializeQR = async () => {
+      console.log('Initializing QR code with URL:', url);
+      console.log('Data provided:', data);
+      
       // Calculate compression ratio
       calculateCompressionRatio();
       
