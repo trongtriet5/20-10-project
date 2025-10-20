@@ -22,10 +22,23 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
 
   // Calculate compression ratio if data is provided
   const calculateCompressionRatio = useCallback(() => {
-    if (data && typeof data === 'object') {
+    if (data && typeof data === 'object' && data !== null) {
       try {
+        // Validate data structure
+        if (!data.name || !data.message) {
+          console.warn('Invalid data structure: missing name or message');
+          setCompressionRatio(0);
+          return;
+        }
+        
         // Create original JSON string for comparison
         const originalJson = JSON.stringify(data);
+        if (!originalJson || originalJson === '{}') {
+          console.warn('Empty or invalid JSON data');
+          setCompressionRatio(0);
+          return;
+        }
+        
         const result = compressString(originalJson, { enableDebugLogging: false });
         setCompressionRatio(result.ratio);
       } catch (error) {
@@ -84,14 +97,19 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
   // Tạo QR code khi component mount
   useEffect(() => {
     const initializeQR = async () => {
-      console.log('Initializing QR code with URL:', url);
-      console.log('Data provided:', data);
+      console.log('Initializing QR code with data:', data);
       
       // Calculate compression ratio
       calculateCompressionRatio();
       
-      // Generate QR code with the provided URL
-      await generateQRCode(url);
+      // Tạo nội dung QR code từ data thay vì URL
+      if (data && data.name && data.message) {
+        const qrContent = `Lời chúc gửi tới ${data.name}:\n\n${data.message.replace(/<[^>]*>/g, '')}`;
+        await generateQRCode(qrContent);
+      } else {
+        // Fallback về URL nếu không có data
+        await generateQRCode(url);
+      }
     };
 
     initializeQR();
@@ -135,8 +153,8 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
           className="mb-4"
         >
           <QrCode className="w-12 h-12 text-pink-500 mx-auto mb-2" />
-          <h3 className="text-xl font-bold text-pink-600 mb-2">Chia sẻ lời chúc</h3>
-          <p className="text-pink-500 text-sm">Quét QR code hoặc copy link để gửi cho người thân</p>
+          <h3 className="text-xl font-bold text-pink-600 mb-2">QR Code lời chúc</h3>
+          <p className="text-pink-500 text-sm">Quét QR code để xem lời chúc trực tiếp</p>
           {compressionRatio > 0 && (
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -189,9 +207,9 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
           transition={{ delay: 0.6 }}
           className="space-y-4"
         >
-          {/* Compressed URL */}
+          {/* Link chia sẻ */}
           <div className="bg-pink-50 rounded-xl p-4 border border-pink-200">
-            <p className="text-sm text-pink-600 mb-2 font-medium">Link chia sẻ (đã nén):</p>
+            <p className="text-sm text-pink-600 mb-2 font-medium">Link chia sẻ:</p>
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -208,11 +226,9 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </motion.button>
             </div>
-            {compressionRatio > 0 && (
-              <p className="text-xs text-green-600 mt-2 font-medium">
-                ✨ Link đã được nén {compressionRatio}% so với phiên bản gốc
-              </p>
-            )}
+            <p className="text-xs text-gray-600 mt-2">
+              💡 QR code chứa nội dung lời chúc, link dùng để chia sẻ
+            </p>
           </div>
         </motion.div>
 

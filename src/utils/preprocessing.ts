@@ -28,6 +28,12 @@ export const REVERSE_PATTERN_REPLACEMENTS = Object.fromEntries(
  * Pre-process string to optimize for compression
  */
 export function preprocessString(str: string): string {
+  // Kiểm tra input hợp lệ
+  if (!str || typeof str !== 'string') {
+    console.error('Invalid input: str must be a non-empty string');
+    return '';
+  }
+  
   // Remove unnecessary whitespace and normalize
   let processed = str.replace(/\s+/g, ' ').trim();
   
@@ -43,6 +49,12 @@ export function preprocessString(str: string): string {
  * Post-process string to restore original format
  */
 export function postprocessString(str: string): string {
+  // Kiểm tra input hợp lệ
+  if (!str || typeof str !== 'string') {
+    console.error('Invalid input: str must be a non-empty string');
+    return '';
+  }
+  
   let processed = str;
   
   // Restore common patterns

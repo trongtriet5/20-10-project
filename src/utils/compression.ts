@@ -16,6 +16,17 @@ export function compressString(str: string, options: CompressionOptions = {}): C
     enableDebugLogging = false
   } = options;
 
+  // Kiểm tra input hợp lệ
+  if (!str || typeof str !== 'string') {
+    console.error('Invalid input: str must be a non-empty string');
+    return {
+      compressed: '',
+      originalLength: 0,
+      compressedLength: 0,
+      ratio: 0
+    };
+  }
+
   const originalLength = str.length;
   
   try {
