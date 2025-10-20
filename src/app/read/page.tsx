@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry } from 'lucide-react';
+import { Heart, Sparkles } from 'lucide-react';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
+import QRCodeGenerator from '@/components/QRCodeGenerator';
 import { parseShortUrl } from '@/utils/compression';
 
 function ReadPageContent() {
@@ -14,29 +15,19 @@ function ReadPageContent() {
   const [showLetter, setShowLetter] = useState(false);
   const [showWish, setShowWish] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState<string>('');
 
-  const cuteIcons = useMemo(() => [
-    { icon: Heart, color: "text-pink-500" },
-    { icon: Flower, color: "text-pink-400" },
-    { icon: Bird, color: "text-purple-400" },
-    { icon: Rainbow, color: "text-purple-500" },
-    { icon: Sun, color: "text-yellow-400" },
-    { icon: Moon, color: "text-blue-400" },
-    { icon: Cherry, color: "text-red-400" },
-    { icon: Star, color: "text-yellow-300" },
-    { icon: Sparkles, color: "text-pink-300" },
-    { icon: Gift, color: "text-rose-400" }
-  ], []);
 
   const decoded = useMemo(() => {
     // Try compressed URL first
     const c = params.get('c');
     if (c) {
       try {
-        const currentUrl = window.location.href;
+        // Reconstruct the current URL properly
+        const currentUrl = `${window.location.origin}${window.location.pathname}?c=${c}`;
         const parsed = parseShortUrl(currentUrl);
         if (parsed) {
-          return parsed as { name: string; message: string; iconIndex: number; font?: string };
+          return parsed as { name: string; message: string; font?: string };
         }
       } catch (error) {
         console.error('Failed to parse compressed URL:', error);
@@ -49,13 +40,31 @@ function ReadPageContent() {
     try {
       // Decode base64 (URL param already percent-decoded by useSearchParams)
       const json = decodeURIComponent(escape(atob(d)));
-      return JSON.parse(json) as { name: string; message: string; iconIndex: number; font?: string };
+      return JSON.parse(json) as { name: string; message: string; font?: string };
     } catch {
       return null;
     }
   }, [params]);
 
   const fontFamily = decoded?.font || 'Inter, Arial, sans-serif';
+
+  // Cập nhật URL hiện tại khi component mount
+  useEffect(() => {
+    // Đảm bảo URL được tạo chính xác với tham số hiện tại
+    const c = params.get('c');
+    const d = params.get('d');
+    
+    if (c) {
+      // Sử dụng URL nén
+      setCurrentUrl(`${window.location.origin}${window.location.pathname}?c=${c}`);
+    } else if (d) {
+      // Sử dụng URL gốc
+      setCurrentUrl(`${window.location.origin}${window.location.pathname}?d=${d}`);
+    } else {
+      // Fallback
+      setCurrentUrl(window.location.href);
+    }
+  }, [params]);
 
   useEffect(() => {
     if (!decoded) {
@@ -121,9 +130,9 @@ function ReadPageContent() {
 
   if (!decoded) return null;
 
-  const index = decoded.iconIndex >= 0 && decoded.iconIndex < cuteIcons.length ? decoded.iconIndex : 0;
-  const IconComponent = cuteIcons[index].icon;
-  const colorClass = cuteIcons[index].color;
+  // Sử dụng icon Heart cố định
+  const IconComponent = Heart;
+  const colorClass = "text-pink-500";
 
   return (
     <div 
@@ -291,9 +300,29 @@ function ReadPageContent() {
                 whileTap={{ scale: 0.95 }}
                 className="bg-pink-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium hover:bg-pink-600 transition-colors text-sm sm:text-base"
               >
-                Tạo lời chúc khác
+                Xác nhận lời chúc
               </motion.button>
             </motion.div>
+
+            {/* QR Code Generator */}
+            {currentUrl && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 }}
+                className="mt-6"
+              >
+                <QRCodeGenerator 
+                  url={currentUrl}
+                  data={{
+                    name: decoded.name,
+                    message: decoded.message,
+                    iconIndex: 0, // Sử dụng icon Heart (index 0)
+                    font: decoded.font || 'Inter, Arial, sans-serif'
+                  }}
+                />
+              </motion.div>
+            )}
 
             <motion.div
               initial={{ opacity: 0 }}
