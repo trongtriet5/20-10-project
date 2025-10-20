@@ -162,12 +162,20 @@ export function createShortUrl(baseUrl: string, data: Record<string, unknown>, o
  */
 export function parseShortUrl(url: string, options: CompressionOptions = {}): Record<string, unknown> | null {
   try {
+    // Kiểm tra input hợp lệ
+    if (!url || typeof url !== 'string') {
+      console.error('Invalid URL input');
+      return null;
+    }
+    
     const urlObj = new URL(url);
     const compressed = urlObj.searchParams.get('c');
     
     if (compressed) {
+      console.log('Parsing compressed data:', compressed.substring(0, 50) + '...');
       const result = decompressString(compressed, options);
       if (result.success) {
+        console.log('Decompression successful');
         return JSON.parse(result.decompressed);
       } else {
         console.error('Decompression failed:', result.error);
@@ -178,10 +186,12 @@ export function parseShortUrl(url: string, options: CompressionOptions = {}): Re
     // Fallback to original method
     const d = urlObj.searchParams.get('d');
     if (d) {
+      console.log('Using fallback base64 method');
       const json = decodeURIComponent(escape(atob(d)));
       return JSON.parse(json);
     }
     
+    console.log('No valid parameters found in URL');
     return null;
   } catch (error) {
     console.error('Failed to parse short URL:', error);

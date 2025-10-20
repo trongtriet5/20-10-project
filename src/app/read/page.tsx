@@ -33,9 +33,12 @@ function ReadPageContent() {
         
         // Fallback: thử parse trực tiếp từ compressed string
         try {
-          const parsed = parseShortUrl(`?c=${c}`);
-          if (parsed) {
-            return parsed as { name: string; message: string; font?: string };
+          if (typeof window !== 'undefined') {
+            const fallbackUrl = `${window.location.origin}${window.location.pathname}?c=${c}`;
+            const parsed = parseShortUrl(fallbackUrl);
+            if (parsed) {
+              return parsed as { name: string; message: string; font?: string };
+            }
           }
         } catch (fallbackError) {
           console.error('Fallback parse failed:', fallbackError);
@@ -65,7 +68,8 @@ function ReadPageContent() {
     if (!decoded) {
       console.log('No decoded data found. Params:', {
         c: params.get('c'),
-        d: params.get('d')
+        d: params.get('d'),
+        currentUrl: typeof window !== 'undefined' ? window.location.href : 'N/A'
       });
       setError('Link không hợp lệ hoặc đã bị hỏng.');
     } else if (decoded && !isInitialized) {
