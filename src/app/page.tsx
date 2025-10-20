@@ -9,7 +9,7 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import Fireworks from '@/components/Fireworks';
 import RichTextEditor from '@/components/RichTextEditor';
 import QRCodeGenerator from '@/components/QRCodeGenerator';
-import { createShortUrl } from '@/utils/compression';
+import { encodeForUrl } from '@/utils/base64';
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -49,12 +49,10 @@ function HomeContent() {
         
         // Auto-trigger the letter opening animation first
         setTimeout(() => {
-          console.log('Starting letter opening animation...');
           setShowWish(true);
           setShowLetter(true);
           // Set the wish content after animation starts
           setTimeout(() => {
-            console.log('Setting wish content...');
             setSelectedWish(sharedData.message);
             setIsLoadingSharedData(false);
           }, 1500); // Delay to ensure animation is visible
@@ -77,12 +75,10 @@ function HomeContent() {
         // Thử phát nhạc ngay lập tức
         try {
           await audioRef.current.play();
-          console.log('Nhạc nền đã phát thành công');
           setIsMuted(false);
           setShowMusicPrompt(false);
         } catch {
-          console.log('Autoplay bị chặn, thử lại sau');
-          // Không set muted ngay, để thử lại
+          // Autoplay bị chặn, thử lại sau
           setShowMusicPrompt(true);
         }
         
@@ -101,9 +97,8 @@ function HomeContent() {
         audioRef.current.play().then(() => {
           setShowMusicPrompt(false);
           setIsMuted(false);
-          console.log('Nhạc nền đã được kích hoạt bởi tương tác');
         }).catch(() => {
-          console.log('Vẫn không thể phát nhạc');
+          // Vẫn không thể phát nhạc
         });
       }
     };
@@ -395,14 +390,15 @@ function HomeContent() {
         font: selectedFont,
       };
       
-      // Tạo link nén làm link rút gọn chính
+      // Tạo link gốc với base64
       const baseUrl = `${window.location.origin}/read`;
-      const compressedUrl = createShortUrl(baseUrl, payload);
+      const base64 = encodeForUrl(payload);
+      const originalUrl = `${baseUrl}?d=${encodeURIComponent(base64)}`;
       
-      setShareUrl(compressedUrl);
+      setShareUrl(originalUrl);
       setShowQRCode(true);
 
-      await navigator.clipboard.writeText(compressedUrl);
+      await navigator.clipboard.writeText(originalUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {

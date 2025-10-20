@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Heart, Sparkles } from 'lucide-react';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
-import { parseShortUrl } from '@/utils/compression';
+import { decodeFromUrl } from '@/utils/base64';
 
 function ReadPageContent() {
   const params = useSearchParams();
@@ -17,48 +17,9 @@ function ReadPageContent() {
 
 
   const decoded = useMemo(() => {
-    // Try compressed URL first
-    const c = params.get('c');
-    if (c) {
-      try {
-        // Kiểm tra xem có đang chạy trên client không
-        if (typeof window !== 'undefined') {
-          // Reconstruct the current URL properly
-          const currentUrl = `${window.location.origin}${window.location.pathname}?c=${encodeURIComponent(c)}`;
-          const parsed = parseShortUrl(currentUrl);
-          if (parsed) {
-            return parsed as { name: string; message: string; font?: string };
-          }
-        }
-        
-        // Fallback: thử parse trực tiếp từ compressed string
-        try {
-          if (typeof window !== 'undefined') {
-            const fallbackUrl = `${window.location.origin}${window.location.pathname}?c=${c}`;
-            const parsed = parseShortUrl(fallbackUrl);
-            if (parsed) {
-              return parsed as { name: string; message: string; font?: string };
-            }
-          }
-        } catch (fallbackError) {
-          console.error('Fallback parse failed:', fallbackError);
-        }
-      } catch (error) {
-        console.error('Failed to parse compressed URL:', error);
-      }
-    }
-    
-    // Fallback to original method
     const d = params.get('d');
     if (!d) return null;
-    try {
-      // Decode base64 (URL param already percent-decoded by useSearchParams)
-      const json = decodeURIComponent(escape(atob(d)));
-      return JSON.parse(json) as { name: string; message: string; font?: string };
-    } catch (error) {
-      console.error('Failed to parse base64 data:', error);
-      return null;
-    }
+    return decodeFromUrl(d) as { name: string; message: string; font?: string } | null;
   }, [params]);
 
   const fontFamily = decoded?.font || 'Inter, Arial, sans-serif';
@@ -66,14 +27,8 @@ function ReadPageContent() {
 
   useEffect(() => {
     if (!decoded) {
-      console.log('No decoded data found. Params:', {
-        c: params.get('c'),
-        d: params.get('d'),
-        currentUrl: typeof window !== 'undefined' ? window.location.href : 'N/A'
-      });
       setError('Link không hợp lệ hoặc đã bị hỏng.');
     } else if (decoded && !isInitialized) {
-      console.log('Decoded data found:', decoded);
       // Tự động hiển thị hiệu ứng mở thư khi có dữ liệu
       setTimeout(() => {
         setShowLetter(true);
@@ -310,17 +265,6 @@ function ReadPageContent() {
             </motion.div>
 
             
-            {/* Debug info - chỉ hiển thị trong development */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 p-4 bg-gray-100 rounded text-xs">
-                <p>Debug Info:</p>
-                <p>decoded: {decoded ? 'Có dữ liệu' : 'Không có dữ liệu'}</p>
-                <p>window available: {typeof window !== 'undefined' ? 'Có' : 'Không'}</p>
-                <p>params c: {params.get('c') ? 'Có' : 'Không'}</p>
-                <p>params d: {params.get('d') ? 'Có' : 'Không'}</p>
-                <p>error: {error || 'Không có lỗi'}</p>
-              </div>
-            )}
 
             <motion.div
               initial={{ opacity: 0 }}
