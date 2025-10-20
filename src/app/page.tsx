@@ -905,7 +905,7 @@ function HomeContent() {
                 onClick={handleExportLetter}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium hover:from-pink-600 hover:to-rose-600 transition-all duration-300 flex items-center gap-2 text-sm sm:text-base"
+                className="hidden sm:flex bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium hover:from-pink-600 hover:to-rose-600 transition-all duration-300 items-center gap-2 text-sm sm:text-base"
               >
                 <Download className="w-4 h-4" />
                 Lưu thư dưới dạng hình ảnh
