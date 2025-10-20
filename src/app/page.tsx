@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Heart, Sparkles, Gift, Star, Flower, Bird, Rainbow, Sun, Moon, Cherry, Download, Volume2, VolumeX, Link as LinkIcon, Check, Zap, PartyPopper, Candy, IceCream, Camera, Music, Palette, Feather, Leaf, Cloud, Coffee, Wine, Trophy, Medal, Rocket, Crown, Smile, X } from 'lucide-react';
+import { Heart, Sparkles, Download, Volume2, VolumeX, Link as LinkIcon, Check, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import Fireworks from '@/components/Fireworks';
@@ -22,7 +22,6 @@ function HomeContent() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [copied, setCopied] = useState(false);
   const [editorHtml, setEditorHtml] = useState('');
-  const [selectedIconIndex, setSelectedIconIndex] = useState<number | null>(null);
   const [selectedWish, setSelectedWish] = useState<string | null>(null);
   const [mode, setMode] = useState<'self' | 'send'>('self');
   const [selectedFont, setSelectedFont] = useState<string>("Inter, Arial, sans-serif");
@@ -39,11 +38,10 @@ function HomeContent() {
       try {
         // Decode shared data
         const json = decodeURIComponent(escape(atob(d)));
-        const sharedData = JSON.parse(json) as { name: string; message: string; iconIndex: number; font?: string };
+        const sharedData = JSON.parse(json) as { name: string; message: string; font?: string };
         
         // Set the shared data but don't show wish yet
         setName(sharedData.name);
-        setSelectedIconIndex(sharedData.iconIndex);
         setSelectedFont(sharedData.font || "Inter, Arial, sans-serif");
         setMode('send');
         
@@ -158,10 +156,7 @@ function HomeContent() {
       // Hiệu ứng pháo hoa
       setShowFireworks(true);
       // Cố định icon và lời chúc để không thay đổi khi re-render
-      const fixedIconIndex = (mode === 'send' && selectedIconIndex !== null)
-        ? selectedIconIndex
-        : Math.floor(Math.random() * cuteIcons.length);
-      setSelectedIconIndex(fixedIconIndex);
+      // Sử dụng icon Heart cố định (không cần set state)
       const fixedWish = (mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : randomWish;
       setSelectedWish(fixedWish);
       setTimeout(() => {
@@ -237,8 +232,7 @@ function HomeContent() {
         'text-red-400': '#f87171',
         'text-rose-400': '#fb7185'
       };
-      const iconIdx = (selectedIconIndex ?? 0);
-      const strokeColor = colorMap[cuteIcons[iconIdx].color as keyof typeof colorMap] || '#ec4899';
+      const strokeColor = colorMap[heartIcon.color as keyof typeof colorMap] || '#ec4899';
       iconSvg.setAttribute('stroke', strokeColor);
       iconSvg.setAttribute('stroke-width', '2');
       iconSvg.setAttribute('stroke-linecap', 'round');
@@ -248,24 +242,10 @@ function HomeContent() {
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       
       // Định nghĩa path cho từng icon
-      const iconPaths = {
-        Heart: 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z',
-        Flower: 'M12 2C8.5 2 6 4.5 6 8c0 2.5 1.5 4.5 3 6l3 3 3-3c1.5-1.5 3-3.5 3-6 0-3.5-2.5-6-6-6z',
-        Bird: 'M16 7h.01M16 3a4 4 0 0 1 4 4c0 .88-.39 1.67-1 2.22V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7.78C4.39 12.67 4 11.88 4 11a4 4 0 0 1 4-4h8z',
-        Rainbow: 'M22 12a10 10 0 0 0-20 0A10 10 0 0 0 22 12zM6 12a6 6 0 0 1 12 0M10 12a2 2 0 0 1 4 0',
-        Sun: 'M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41M12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12z',
-        Moon: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z',
-        Cherry: 'M2 17a5 5 0 0 0 10 0c0-2.76-2.5-5-5-5s-5 2.24-5 5zM7 17a2 2 0 1 1 0-4 2 2 0 0 1 0 4zM12 17a5 5 0 0 0 10 0c0-2.76-2.5-5-5-5s-5 2.24-5 5zM17 17a2 2 0 1 1 0-4 2 2 0 0 1 0 4z',
-        Star: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
-        Sparkles: 'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0L9.937 15.5zM12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12z',
-        Gift: 'M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'
-      };
+      const iconPath = 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z';
       
-      // Lấy tên icon theo chỉ số đã cố định
-      const iconIndex = (selectedIconIndex ?? 0);
-      const iconNames = ['Heart', 'Flower', 'Bird', 'Rainbow', 'Sun', 'Moon', 'Cherry', 'Star', 'Sparkles', 'Gift'];
-      const iconName = iconNames[iconIndex] || 'Heart';
-      const iconPath = iconPaths[iconName as keyof typeof iconPaths] || iconPaths.Heart;
+      // Sử dụng icon Heart cố định
+      const iconName = 'Heart';
       
       path.setAttribute('d', iconPath);
       iconSvg.appendChild(path);
@@ -382,11 +362,10 @@ function HomeContent() {
 
   const handleCreateShareLink = async () => {
     try {
-      const iconIndex = (selectedIconIndex ?? 0);
       const payload = {
         name,
         message: (selectedWish || ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish))),
-        iconIndex: iconIndex >= 0 ? iconIndex : 0,
+        iconIndex: 0, // Sử dụng icon Heart cố định (index 0)
         font: selectedFont,
       };
       
@@ -407,16 +386,6 @@ function HomeContent() {
     }
   };
 
-  // Get the data payload for compression
-  const getShareData = () => {
-    const iconIndex = (selectedIconIndex ?? 0);
-    return {
-      name,
-      message: (selectedWish || ((mode === 'send') ? (sanitizeHtml(editorHtml).trim() ? sanitizeHtml(editorHtml) : textToHtml(randomWish)) : textToHtml(randomWish))),
-      iconIndex: iconIndex >= 0 ? iconIndex : 0,
-      font: selectedFont,
-    };
-  };
 
 
 
@@ -446,40 +415,12 @@ function HomeContent() {
   const randomWish = wishes[Math.floor(Math.random() * wishes.length)];
 
   // Mảng các icon cute
-  const cuteIcons = [
-    { icon: Heart, color: "text-pink-500", name: 'Heart' },
-    { icon: Flower, color: "text-pink-400", name: 'Flower' },
-    { icon: Bird, color: "text-purple-400", name: 'Bird' },
-    { icon: Rainbow, color: "text-purple-500", name: 'Rainbow' },
-    { icon: Sun, color: "text-yellow-400", name: 'Sun' },
-    { icon: Moon, color: "text-blue-400", name: 'Moon' },
-    { icon: Cherry, color: "text-red-400", name: 'Cherry' },
-    { icon: Star, color: "text-yellow-300", name: 'Star' },
-    { icon: Sparkles, color: "text-pink-300", name: 'Sparkles' },
-    { icon: Gift, color: "text-rose-400", name: 'Gift' },
-    { icon: Zap, color: "text-pink-400", name: 'Zap' },
-    { icon: PartyPopper, color: "text-rose-400", name: 'PartyPopper' },
-    { icon: Candy, color: "text-pink-500", name: 'Candy' },
-    { icon: IceCream, color: "text-pink-400", name: 'IceCream' },
-    { icon: Camera, color: "text-purple-400", name: 'Camera' },
-    { icon: Music, color: "text-blue-400", name: 'Music' },
-    { icon: Palette, color: "text-rose-400", name: 'Palette' },
-    { icon: Feather, color: "text-pink-500", name: 'Feather' },
-    { icon: Leaf, color: "text-green-500", name: 'Leaf' },
-    { icon: Cloud, color: "text-sky-400", name: 'Cloud' },
-    { icon: Coffee, color: "text-amber-600", name: 'Coffee' },
-    { icon: Wine, color: "text-red-500", name: 'Wine' },
-    { icon: Trophy, color: "text-yellow-500", name: 'Trophy' },
-    { icon: Medal, color: "text-yellow-500", name: 'Medal' },
-    { icon: Rocket, color: "text-indigo-500", name: 'Rocket' },
-    { icon: Crown, color: "text-yellow-500", name: 'Crown' },
-    { icon: Smile, color: "text-pink-400", name: 'Smile' },
-  ];
+  // Chỉ sử dụng icon Heart cố định
+  const heartIcon = { icon: Heart, color: "text-pink-500", name: 'Heart' };
 
-  // Dùng icon đã cố định nếu có, tránh đổi khi tương tác
-  const displayIconIndex = selectedIconIndex ?? 0;
-  const IconComponent = cuteIcons[displayIconIndex].icon;
-  const displayIconColor = cuteIcons[displayIconIndex].color;
+  // Sử dụng icon Heart cố định
+  const IconComponent = heartIcon.icon;
+  const displayIconColor = heartIcon.color;
 
   // Simple sanitizer to allow basic formatting and emoji
   function sanitizeHtml(input: string): string {
@@ -707,14 +648,28 @@ function HomeContent() {
               <div className="flex items-center justify-center gap-2 rounded-xl p-2">
                 <button
                   type="button"
-                  onClick={() => setMode('self')}
+                  onClick={() => {
+                    setMode('self');
+                    setEditorHtml('');
+                    setSelectedWish(null);
+                    setShareUrl('');
+                    setShowQRCode(false);
+                    setCopied(false);
+                  }}
                   className={`px-4 py-2 rounded-lg text-sm sm:text-base font-medium ${mode === 'self' ? 'bg-pink-500 text-white' : 'bg-pink-100 text-pink-600 hover:bg-pink-200'}`}
                 >
                   Nhận cho bản thân
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMode('send')}
+                  onClick={() => {
+                    setMode('send');
+                    setEditorHtml('');
+                    setSelectedWish(null);
+                    setShareUrl('');
+                    setShowQRCode(false);
+                    setCopied(false);
+                  }}
                   className={`px-4 py-2 rounded-lg text-sm sm:text-base font-medium ${mode === 'send' ? 'bg-pink-500 text-white' : 'bg-pink-100 text-pink-600 hover:bg-pink-200'}`}
                 >
                   Gửi cho người khác
@@ -728,7 +683,14 @@ function HomeContent() {
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    // Reset các state liên quan khi thay đổi tên
+                    setSelectedWish(null);
+                    setShareUrl('');
+                    setShowQRCode(false);
+                    setCopied(false);
+                  }}
                   placeholder={mode === 'self' ? 'Tên của nàng là gì ... ??' : 'Tên người nhận là gì ... ??'}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-pink-100 focus:border-pink-300 focus:outline-none text-center text-base sm:text-lg placeholder-pink-200"
                   required
@@ -744,7 +706,14 @@ function HomeContent() {
                     <label className="text-pink-500 text-sm mr-2">Font:</label>
                     <select
                       value={selectedFont}
-                      onChange={(e) => setSelectedFont(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedFont(e.target.value);
+                        // Reset các state liên quan khi thay đổi font
+                        setSelectedWish(null);
+                        setShareUrl('');
+                        setShowQRCode(false);
+                        setCopied(false);
+                      }}
                       className="border-2 border-pink-100 rounded-lg px-3 py-2 text-sm"
                     >
                       <option value="Inter, Arial, sans-serif">Inter (mặc định)</option>
@@ -762,7 +731,14 @@ function HomeContent() {
                 
                 <RichTextEditor
                   content={editorHtml}
-                  onChange={setEditorHtml}
+                  onChange={(content) => {
+                    setEditorHtml(content);
+                    // Reset các state liên quan khi thay đổi nội dung
+                    setSelectedWish(null);
+                    setShareUrl('');
+                    setShowQRCode(false);
+                    setCopied(false);
+                  }}
                   fontFamily={selectedFont}
                   className="relative"
                 />
@@ -788,7 +764,7 @@ function HomeContent() {
                 transition={{ duration: 0.3 }}
                 className="w-full bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base"
               >
-                <Gift className="w-5 h-5" />
+                <Heart className="w-5 h-5" />
                 {mode === 'self' ? 'Nhận lời chúc' : 'Tạo lời chúc'}
                 <Sparkles className="w-5 h-5" />
               </motion.button>
@@ -813,7 +789,7 @@ function HomeContent() {
                     delay: i * 0.2
                   }}
                 >
-                  <Star className="w-4 h-4 text-pink-400" />
+                  <Heart className="w-4 h-4 text-pink-400" />
                 </motion.div>
               ))}
             </motion.div>
@@ -865,6 +841,11 @@ function HomeContent() {
                 onClick={() => {
                   setShowWish(false);
                   setName('');
+                  setEditorHtml('');
+                  setSelectedWish(null);
+                  setShareUrl('');
+                  setShowQRCode(false);
+                  setCopied(false);
                 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -908,7 +889,11 @@ function HomeContent() {
               >
                 <div className="relative">
                   <motion.button
-                    onClick={() => setShowQRCode(false)}
+                    onClick={() => {
+                      setShowQRCode(false);
+                      setShareUrl('');
+                      setCopied(false);
+                    }}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     className="absolute -top-2 -right-2 z-10 bg-pink-500 text-white rounded-full p-2 shadow-lg hover:bg-pink-600 transition-colors"
@@ -917,7 +902,6 @@ function HomeContent() {
                   </motion.button>
                   <QRCodeGenerator 
                     url={shareUrl}
-                    data={getShareData()}
                   />
                 </div>
               </motion.div>

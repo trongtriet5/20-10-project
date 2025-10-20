@@ -5,14 +5,11 @@ import { motion } from 'framer-motion';
 import { Download, QrCode, Copy, Check } from 'lucide-react';
 import Image from 'next/image';
 import QRCodeLib from 'qrcode';
-import type { WishData } from '@/types/app';
-
 interface QRCodeGeneratorProps {
   url: string; // The original URL
-  data?: WishData; // Original data for QR content
 }
 
-export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
+export default function QRCodeGenerator({ url }: QRCodeGeneratorProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);

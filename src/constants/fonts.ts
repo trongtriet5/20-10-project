@@ -1,8 +1,6 @@
 // Font definitions for the application
 
-import type { FontOption } from '../types/app';
-
-export const FONT_OPTIONS: FontOption[] = [
+export const FONT_OPTIONS: Array<{ value: string; label: string; isGoogleFont?: boolean }> = [
   { value: "Inter, Arial, sans-serif", label: "Inter (mặc định)" },
   { value: "'Times New Roman', Times, serif", label: "Times New Roman" },
   { value: "Georgia, serif", label: "Georgia" },
