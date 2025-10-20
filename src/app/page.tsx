@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Heart, Sparkles, Download, Volume2, VolumeX, Link as LinkIcon, Check, X } from 'lucide-react';
+import { Heart, Sparkles, Download, Volume2, VolumeX, Link as LinkIcon, Check } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import Fireworks from '@/components/Fireworks';
@@ -245,7 +245,6 @@ function HomeContent() {
       const iconPath = 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z';
       
       // Sử dụng icon Heart cố định
-      const iconName = 'Heart';
       
       path.setAttribute('d', iconPath);
       iconSvg.appendChild(path);
@@ -344,15 +343,62 @@ function HomeContent() {
         height: 700,
       });
 
-      // Tạo link download
-      const link = document.createElement('a');
-      link.download = `thu-chuc-mung-20-10-${name || 'ban'}.png`;
-      link.href = canvas.toDataURL('image/png');
-      
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const fileName = `thu-chuc-mung-20-10-${name || 'ban'}.png`;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      await new Promise<void>((resolve) => {
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            // Fallback: mở tab mới với dataURL
+            const dataUrl = canvas.toDataURL('image/png');
+            const win = window.open();
+            if (win) {
+              win.document.write(`<html><head><title>${fileName}</title></head><body style=\"margin:0;background:#fff;display:flex;align-items:center;justify-content:center;\"><img src='${dataUrl}' style='max-width:100%;height:auto' /></body></html>`);
+            }
+            resolve();
+            return;
+          }
+
+          if (isMobile) {
+            // Điện thoại: sử dụng Web Share API để lưu vào album ảnh
+            try {
+              const file = new File([blob], fileName, { type: 'image/png' });
+              if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+                await navigator.share({ 
+                  files: [file], 
+                  title: fileName, 
+                  text: 'Lưu hình ảnh lời chúc 20/10 vào album ảnh' 
+                });
+                resolve();
+                return;
+              }
+            } catch (error) {
+              console.log('Web Share API failed:', error);
+            }
+            
+            // Fallback cho điện thoại: mở tab mới để long-press lưu
+            const dataUrl = canvas.toDataURL('image/png');
+            const win = window.open();
+            if (win) {
+              win.document.write(`<html><head><meta name='viewport' content='width=device-width, initial-scale=1' /><title>${fileName}</title></head><body style=\"margin:0;background:#fff;display:flex;align-items:center;justify-content:center;\"><img src='${dataUrl}' style='max-width:100%;height:auto' /></body></html>`);
+            }
+            resolve();
+          } else {
+            // Máy tính: download file như bình thường
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+            resolve();
+          }
+        }, 'image/png');
+      });
+
+      // Dọn dẹp phần tử tạm
       document.body.removeChild(letterElement);
     } catch {
       console.error('Lỗi khi xuất hình ảnh');
@@ -879,32 +925,21 @@ function HomeContent() {
               )}
             </motion.div>
 
-            {/* QR Code Generator */}
+            {/* QR Code Generator - Đơn giản như Me-QR */}
             {showQRCode && shareUrl && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="mt-6"
-              >
-                <div className="relative">
-                  <motion.button
-                    onClick={() => {
-                      setShowQRCode(false);
-                      setShareUrl('');
-                      setCopied(false);
-                    }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="absolute -top-2 -right-2 z-10 bg-pink-500 text-white rounded-full p-2 shadow-lg hover:bg-pink-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </motion.button>
-                  <QRCodeGenerator 
-                    url={shareUrl}
-                  />
-                </div>
-              </motion.div>
+              <div className="mt-6 flex flex-col items-center">
+                <QRCodeGenerator url={shareUrl} />
+                <button
+                  onClick={() => {
+                    setShowQRCode(false);
+                    setShareUrl('');
+                    setCopied(false);
+                  }}
+                  className="mt-3 text-sm text-gray-500 hover:text-gray-700 underline"
+                >
+                  Đóng QR code
+                </button>
+              </div>
             )}
 
             <motion.div

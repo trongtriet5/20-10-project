@@ -1,22 +1,23 @@
 'use client';
 
-import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'react-qr-code';
 
 interface QRCodeGeneratorProps {
-  url: string; // The original URL
+  url: string;
 }
 
 export default function QRCodeGenerator({ url }: QRCodeGeneratorProps) {
   return (
-    <div className="text-center">
-      <QRCodeSVG
+    <div className="flex justify-center items-center p-2">
+      <QRCode
         value={url}
-        size={100}
-        bgColor="#ffffff"
-        fgColor="#be185d"
+        size={120}
         level="M"
-        includeMargin={false}
-        className="rounded-lg shadow-md mx-auto"
+        style={{ 
+          height: "auto", 
+          maxWidth: "100%", 
+          width: "100%"
+        }}
       />
     </div>
   );
