@@ -49,18 +49,12 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
   // Tạo QR code khi component mount
   useEffect(() => {
     const initializeQR = async () => {
-      // Tạo nội dung QR code từ data thay vì URL
-      if (data?.name && data?.message) {
-        const qrContent = `Lời chúc gửi tới ${data.name}:\n\n${data.message.replace(/<[^>]*>/g, '')}`;
-        await generateQRCode(qrContent);
-      } else {
-        // Fallback về URL nếu không có data
-        await generateQRCode(url);
-      }
+      // QR code sẽ chứa URL để mở trang xem thư
+      await generateQRCode(url);
     };
 
     initializeQR();
-  }, [url, data]);
+  }, [url]);
 
   // Copy link to clipboard
   const handleCopyLink = async (linkToCopy: string) => {
@@ -101,7 +95,7 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
         >
           <QrCode className="w-12 h-12 text-pink-500 mx-auto mb-2" />
           <h3 className="text-xl font-bold text-pink-600 mb-2">QR Code lời chúc</h3>
-          <p className="text-pink-500 text-sm">Quét QR code để xem lời chúc trực tiếp</p>
+          <p className="text-pink-500 text-sm">Quét QR code để mở trang xem lời chúc</p>
         </motion.div>
 
         {/* QR Code Display */}
@@ -164,7 +158,7 @@ export default function QRCodeGenerator({ url, data }: QRCodeGeneratorProps) {
               </motion.button>
             </div>
             <p className="text-xs text-gray-600 mt-2">
-              💡 QR code chứa nội dung lời chúc, link dùng để chia sẻ
+              💡 QR code và link đều mở trang xem lời chúc với hiệu ứng đẹp
             </p>
           </div>
         </motion.div>
