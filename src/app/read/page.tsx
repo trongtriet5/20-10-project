@@ -26,11 +26,21 @@ function ReadPageContent() {
         // Kiểm tra xem có đang chạy trên client không
         if (typeof window !== 'undefined') {
           // Reconstruct the current URL properly
-          const currentUrl = `${window.location.origin}${window.location.pathname}?c=${c}`;
+          const currentUrl = `${window.location.origin}${window.location.pathname}?c=${encodeURIComponent(c)}`;
           const parsed = parseShortUrl(currentUrl);
           if (parsed) {
             return parsed as { name: string; message: string; font?: string };
           }
+        }
+        
+        // Fallback: thử parse trực tiếp từ compressed string
+        try {
+          const parsed = parseShortUrl(`?c=${c}`);
+          if (parsed) {
+            return parsed as { name: string; message: string; font?: string };
+          }
+        } catch (fallbackError) {
+          console.error('Fallback parse failed:', fallbackError);
         }
       } catch (error) {
         console.error('Failed to parse compressed URL:', error);
@@ -44,7 +54,8 @@ function ReadPageContent() {
       // Decode base64 (URL param already percent-decoded by useSearchParams)
       const json = decodeURIComponent(escape(atob(d)));
       return JSON.parse(json) as { name: string; message: string; font?: string };
-    } catch {
+    } catch (error) {
+      console.error('Failed to parse base64 data:', error);
       return null;
     }
   }, [params]);
@@ -61,11 +72,13 @@ function ReadPageContent() {
     const d = params.get('d');
     
     if (c) {
-      // Sử dụng URL nén
-      setCurrentUrl(`${window.location.origin}${window.location.pathname}?c=${c}`);
+      // Sử dụng URL nén - đảm bảo encode đúng
+      const encodedC = encodeURIComponent(c);
+      setCurrentUrl(`${window.location.origin}${window.location.pathname}?c=${encodedC}`);
     } else if (d) {
-      // Sử dụng URL gốc
-      setCurrentUrl(`${window.location.origin}${window.location.pathname}?d=${d}`);
+      // Sử dụng URL gốc - đảm bảo encode đúng
+      const encodedD = encodeURIComponent(d);
+      setCurrentUrl(`${window.location.origin}${window.location.pathname}?d=${encodedD}`);
     } else {
       // Fallback
       setCurrentUrl(window.location.href);
@@ -74,15 +87,21 @@ function ReadPageContent() {
 
   useEffect(() => {
     if (!decoded) {
+      console.log('No decoded data found. Params:', {
+        c: params.get('c'),
+        d: params.get('d'),
+        currentUrl
+      });
       setError('Link không hợp lệ hoặc đã bị hỏng.');
     } else if (decoded && !isInitialized) {
+      console.log('Decoded data found:', decoded);
       // Tự động hiển thị hiệu ứng mở thư khi có dữ liệu
       setTimeout(() => {
         setShowLetter(true);
         setIsInitialized(true);
       }, 1000);
     }
-  }, [decoded, isInitialized]);
+  }, [decoded, isInitialized, params, currentUrl]);
 
   // Đảm bảo currentUrl được set sau khi component mount
   useEffect(() => {
@@ -91,9 +110,11 @@ function ReadPageContent() {
       const d = params.get('d');
       
       if (c) {
-        setCurrentUrl(`${window.location.origin}${window.location.pathname}?c=${c}`);
+        const encodedC = encodeURIComponent(c);
+        setCurrentUrl(`${window.location.origin}${window.location.pathname}?c=${encodedC}`);
       } else if (d) {
-        setCurrentUrl(`${window.location.origin}${window.location.pathname}?d=${d}`);
+        const encodedD = encodeURIComponent(d);
+        setCurrentUrl(`${window.location.origin}${window.location.pathname}?d=${encodedD}`);
       } else {
         setCurrentUrl(window.location.href);
       }
@@ -353,6 +374,9 @@ function ReadPageContent() {
                 <p>currentUrl: {currentUrl || 'Chưa có'}</p>
                 <p>decoded: {decoded ? 'Có dữ liệu' : 'Không có dữ liệu'}</p>
                 <p>window available: {typeof window !== 'undefined' ? 'Có' : 'Không'}</p>
+                <p>params c: {params.get('c') ? 'Có' : 'Không'}</p>
+                <p>params d: {params.get('d') ? 'Có' : 'Không'}</p>
+                <p>error: {error || 'Không có lỗi'}</p>
               </div>
             )}
 
